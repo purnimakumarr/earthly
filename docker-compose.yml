@@ -1,0 +1,44 @@
+# One command to run everything locally:  docker compose up --build
+# Site and API: http://localhost:3000    API docs: http://localhost:3000/api/docs
+services:
+  mongo:
+    image: mongo:8
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Loads the demo data once, then exits. Does nothing if data is already there.
+  seed:
+    build: .
+    command: ['node', 'seed/seed.js']
+    environment: &app-env
+      # development keeps the session cookie usable over plain http://localhost
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: earthly
+      JWT_SECRET: ${JWT_SECRET:-local-development-secret-not-for-production-use}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment: *app-env
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+volumes:
+  mongo-data:
+  uploads:

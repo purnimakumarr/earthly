@@ -1,0 +1,61 @@
+{
+  "name": "earthly",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Booking API for small-group, low-impact expeditions across India",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "nodemon --watch src src/server.js | pino-pretty",
+    "dev:web": "npm --prefix client run dev",
+    "start": "node src/server.js",
+    "build": "npm --prefix client ci && npm --prefix client run build",
+    "seed": "node seed/seed.js",
+    "seed:reset": "node seed/seed.js --reset",
+    "test": "jest --runInBand",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "author": "Purnima Kumar",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^18.0.10",
+    "express": "^4.22.3",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.7.4",
+    "helmet": "^8.3.0",
+    "hpp": "^0.2.3",
+    "html-to-text": "^10.0.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.24.9",
+    "multer": "^2.5.0",
+    "nodemailer": "^10.5.0",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0",
+    "razorpay": "^2.9.8",
+    "sharp": "^0.35.5",
+    "slugify": "^1.6.9",
+    "swagger-ui-express": "^5.0.1",
+    "validator": "^13.15.35",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.7",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.14.0",
+    "jest": "^30.5.2",
+    "mongodb-memory-server": "^11.3.0",
+    "nodemon": "^3.1.14",
+    "pino-pretty": "^13.2.0",
+    "prettier": "^3.10.1",
+    "supertest": "^7.3.2"
+  }
+}

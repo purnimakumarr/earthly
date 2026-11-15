@@ -1,0 +1,61 @@
+[
+  { "expedition": "spiti", "user": "kavya", "rating": 5, "review": "Chandratal at dawn with nobody else around was worth every hour on that road. The homestay in Kibber fed us better than most restaurants." },
+  { "expedition": "spiti", "user": "arjun", "rating": 5, "review": "Tenzin paced the first days well and nobody in our group had altitude trouble. Tabo monastery was the surprise of the trip." },
+  { "expedition": "spiti", "user": "farhan", "rating": 4, "review": "Stunning, but be honest with yourself about the road days. Eight hours in a jeep over Kunzum is hard on the back." },
+  { "expedition": "spiti", "user": "ritu", "rating": 5, "review": "I liked that our money visibly went to the villages. We were shown the fodder bank and met the people who run it." },
+  { "expedition": "spiti", "user": "zoya", "rating": 4, "review": "Cold nights even in July and the dry toilets take a day to get used to. The night sky made up for both." },
+
+  { "expedition": "valley-of-flowers", "user": "nandini", "rating": 5, "review": "Went in the second week of August and the valley was pink and blue from end to end. Our botanist could name everything." },
+  { "expedition": "valley-of-flowers", "user": "ishita", "rating": 4, "review": "It rained on four days out of six, exactly as the description warned. Good rain gear matters more than good boots here." },
+  { "expedition": "valley-of-flowers", "user": "daniel", "rating": 5, "review": "The climb to Hemkund is brutal and optional and I am glad I did it. Porters were paid fairly and treated as part of the group." },
+  { "expedition": "valley-of-flowers", "user": "pooja", "rating": 4, "review": "Ghangaria is basic and crowded with pilgrims. The valley itself is quiet once you walk past the first kilometre." },
+  { "expedition": "valley-of-flowers", "user": "karthik", "rating": 5, "review": "A small group made all the difference on a narrow trail. We saw a brahma kamal on the last day." },
+
+  { "expedition": "kaziranga", "user": "vikram", "rating": 5, "review": "Eleven rhinos before breakfast on the first morning. Rohan spotted a fishing cat that I would have driven straight past." },
+  { "expedition": "kaziranga", "user": "sana", "rating": 5, "review": "I appreciated that there was no elephant riding. The lodge naturalists were former forest guards with thirty years of stories." },
+  { "expedition": "kaziranga", "user": "aditya", "rating": 4, "review": "The western range was the best for wildlife, the eastern for birds. The drive from Guwahati is longer than I expected." },
+  { "expedition": "kaziranga", "user": "kavya", "rating": 5, "review": "Hearing the gibbons call at Hoollongapar was the highlight for my kids. Easy trip to do with a family." },
+  { "expedition": "kaziranga", "user": "nandini", "rating": 4, "review": "Dusty in February, so carry a scarf. Wildlife sightings were constant and the jeeps were never crowded." },
+
+  { "expedition": "sundarbans", "user": "ishita", "rating": 5, "review": "No tiger, and it did not matter. Drifting through the creeks at high tide in silence is something I will remember." },
+  { "expedition": "sundarbans", "user": "farhan", "rating": 4, "review": "The boat is simple and the cabins are small. Food cooked on board was excellent, especially the fish." },
+  { "expedition": "sundarbans", "user": "ritu", "rating": 5, "review": "The evening with the mangrove cooperative changed how I think about this place. We planted our saplings ourselves." },
+  { "expedition": "sundarbans", "user": "daniel", "rating": 4, "review": "Great for birds. Six kingfisher species as promised, plus a crocodile on the mudbank at Dobanki." },
+  { "expedition": "sundarbans", "user": "zoya", "rating": 3, "review": "Peaceful, but three days of watchtowers was one too many for me. Would suit people who like slow travel." },
+
+  { "expedition": "meghalaya", "user": "arjun", "rating": 5, "review": "The stairs to Nongriat are no joke and my legs shook for two days. Sleeping in the village after the day trippers leave is magic." },
+  { "expedition": "meghalaya", "user": "pooja", "rating": 5, "review": "Banri's family has looked after one of the bridges for generations and he explained how the roots are trained. Unforgettable." },
+  { "expedition": "meghalaya", "user": "karthik", "rating": 4, "review": "Very humid and the trail is slippery. The natural pools near the double-decker bridge were the reward." },
+  { "expedition": "meghalaya", "user": "sana", "rating": 5, "review": "Dawki's water really is that clear. I liked that village fees were paid in front of us, straight to the council." },
+  { "expedition": "meghalaya", "user": "vikram", "rating": 4, "review": "Well organised and well paced. Mawlynnong felt a little staged compared with Nongriat." },
+
+  { "expedition": "kutch", "user": "aditya", "rating": 5, "review": "Walking out on the salt under a full moon is surreal. The bhungas stay warm at night even when it is freezing outside." },
+  { "expedition": "kutch", "user": "kavya", "rating": 4, "review": "Loved buying directly from the weavers. The Rann itself is busier than the photos suggest, but our guide knew a quiet stretch." },
+  { "expedition": "kutch", "user": "nandini", "rating": 5, "review": "Thousands of flamingos and common cranes at Chhari Dhand. Imran is a patient guide and a very good birder." },
+  { "expedition": "kutch", "user": "daniel", "rating": 4, "review": "An easy, comfortable trip. More driving than walking, which suited my parents." },
+  { "expedition": "kutch", "user": "ritu", "rating": 4, "review": "The village-run resort was the right choice over the big tent city. Food was simple Kutchi home cooking." },
+
+  { "expedition": "western-ghats", "user": "farhan", "rating": 5, "review": "The walk in Periyar with former poachers was the most interesting day I have had on any trip. They read the forest like a book." },
+  { "expedition": "western-ghats", "user": "ishita", "rating": 5, "review": "Saw Nilgiri tahr within minutes at Eravikulam and a herd of elephants from the bamboo raft. Lakshmi was superb." },
+  { "expedition": "western-ghats", "user": "zoya", "rating": 4, "review": "Leeches. So many leeches in September. The leech socks work, wear them." },
+  { "expedition": "western-ghats", "user": "arjun", "rating": 4, "review": "The long day through the shola forest was tougher than moderate in my opinion. Beautiful all the same." },
+  { "expedition": "western-ghats", "user": "pooja", "rating": 5, "review": "Misty mornings, tea estates and good filter coffee. A well-thought-out route with very little time in a vehicle." },
+
+  { "expedition": "andaman", "user": "sana", "rating": 5, "review": "Doing the morning reef counts made me look far more closely than I would have alone. I can now tell a parrotfish from a wrasse." },
+  { "expedition": "andaman", "user": "karthik", "rating": 5, "review": "Kayaking through the mangroves with the water glowing under the paddle was unreal. Small group, no crowds." },
+  { "expedition": "andaman", "user": "vikram", "rating": 4, "review": "Reefs at Shaheed Dweep were healthier than at Swaraj Dweep. Ferry timings ate into one day." },
+  { "expedition": "andaman", "user": "aditya", "rating": 5, "review": "Strict about not touching coral and not feeding fish, which I respect. Saw a turtle on three separate snorkels." },
+  { "expedition": "andaman", "user": "kavya", "rating": 4, "review": "Lovely, though pricey once you add flights. The biologist travelling with us was worth it." },
+
+  { "expedition": "hemis", "user": "daniel", "rating": 5, "review": "On day seven a female and two cubs crossed the ridge opposite our camp. Three hours through the scope. I cried." },
+  { "expedition": "hemis", "user": "nandini", "rating": 4, "review": "We did not see a leopard and I would still recommend it. Wolves, ibex, and a family in Rumbak who treated us like relatives." },
+  { "expedition": "hemis", "user": "farhan", "rating": 5, "review": "The trackers are extraordinary. They found a cat asleep on a ledge that I could not see even when told where to look." },
+  { "expedition": "hemis", "user": "ritu", "rating": 5, "review": "The coldest I have ever been and the best wildlife trip I have ever taken. Take the acclimatisation days seriously." },
+  { "expedition": "hemis", "user": "ishita", "rating": 4, "review": "Minus eighteen at night in a homestay with one stove. Bring a proper sleeping bag liner. Sightings on two days." },
+
+  { "expedition": "satpura", "user": "pooja", "rating": 5, "review": "Walking in tiger country sharpens every sense. We found fresh pugmarks over our own footprints on the way back." },
+  { "expedition": "satpura", "user": "zoya", "rating": 5, "review": "The canoe at sunset on the Denwa, with skimmers flying past, was perfect. Hardly another vehicle all week." },
+  { "expedition": "satpura", "user": "arjun", "rating": 4, "review": "The mobile camp is properly basic, one bucket of water and no power. That is the point, but know before you go." },
+  { "expedition": "satpura", "user": "karthik", "rating": 5, "review": "Sloth bear with a cub on her back from about eighty metres, on foot. The forest guard kept us calm and safe." },
+  { "expedition": "satpura", "user": "vikram", "rating": 4, "review": "A thoughtful alternative to the busy parks. The rock paintings near Pachmarhi were an unexpected bonus." }
+]

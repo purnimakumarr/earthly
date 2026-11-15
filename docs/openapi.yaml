@@ -1,0 +1,779 @@
+openapi: 3.1.0
+info:
+  title: Earthly API
+  version: 1.0.0
+  description: |
+    REST API behind Earthly, a booking site for small-group expeditions.
+
+    **Authentication.** Logging in sets an httpOnly `session` cookie and also
+    returns the same JWT in the response body. Send either the cookie or an
+    `Authorization: Bearer <token>` header. In this page, log in with
+    `POST /auth/login`, copy the token and paste it under **Authorize**.
+
+    **Roles.** `traveler` (default), `guide`, `lead`, `admin`.
+
+    **Responses.** Success: `{ "status": "success", "data": ... }`.
+    Failure: `{ "status": "fail" | "error", "message": "..." }`.
+servers:
+  - url: /api/v1
+tags:
+  - name: Auth
+  - name: Users
+  - name: Expeditions
+  - name: Reviews
+  - name: Bookings
+  - name: Webhooks
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, pattern: '^[0-9a-f]{24}$' }
+    ExpeditionId:
+      name: expeditionId
+      in: path
+      required: true
+      schema: { type: string, pattern: '^[0-9a-f]{24}$' }
+    Sort:
+      name: sort
+      in: query
+      description: Comma-separated fields; prefix with `-` for descending.
+      schema: { type: string, example: '-ratingsAverage,price' }
+    Fields:
+      name: fields
+      in: query
+      description: Comma-separated list of fields to return.
+      schema: { type: string, example: 'name,price,difficulty' }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 100 }
+    LatLng:
+      name: latlng
+      in: query
+      required: true
+      description: '`latitude,longitude`'
+      schema: { type: string, example: '26.1445,91.7362' }
+    Unit:
+      name: unit
+      in: query
+      schema: { type: string, enum: [km, mi], default: km }
+
+  responses:
+    BadRequest:
+      description: Validation failed or the request is malformed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing, invalid or expired session
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: The role of the caller does not allow this
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: No such resource
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        status: { type: string, enum: [fail, error] }
+        message: { type: string }
+    User:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [traveler, guide, lead, admin] }
+        photo: { type: string, description: URL path of the profile picture }
+    Session:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        token: { type: string, description: JWT, also set as the `session` cookie }
+        data: { $ref: '#/components/schemas/User' }
+    Point:
+      type: object
+      properties:
+        type: { type: string, enum: [Point] }
+        coordinates:
+          type: array
+          description: '[longitude, latitude]'
+          items: { type: number }
+          minItems: 2
+          maxItems: 2
+        address: { type: string }
+        description: { type: string }
+    ExpeditionInput:
+      type: object
+      required:
+        [name, region, duration, maxGroupSize, difficulty, price, summary, coverImage]
+      properties:
+        name: { type: string, minLength: 8, maxLength: 60 }
+        region: { type: string }
+        duration: { type: integer, description: Days }
+        maxGroupSize: { type: integer }
+        difficulty: { type: string, enum: [easy, moderate, challenging] }
+        price: { type: number, description: Per person, INR }
+        priceDiscount: { type: number }
+        summary: { type: string }
+        description: { type: string }
+        coverImage: { type: string }
+        images: { type: array, items: { type: string } }
+        startDates: { type: array, items: { type: string, format: date-time } }
+        unlisted: { type: boolean, description: Hidden from every query when true }
+        startLocation: { $ref: '#/components/schemas/Point' }
+        locations:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Point'
+              - type: object
+                properties:
+                  day: { type: integer }
+        guides: { type: array, items: { type: string }, description: User ids }
+    Expedition:
+      allOf:
+        - $ref: '#/components/schemas/ExpeditionInput'
+        - type: object
+          properties:
+            _id: { type: string }
+            slug: { type: string }
+            ratingsAverage: { type: number }
+            ratingsQuantity: { type: integer }
+            durationWeeks: { type: number }
+            guides: { type: array, items: { $ref: '#/components/schemas/User' } }
+    Review:
+      type: object
+      properties:
+        _id: { type: string }
+        review: { type: string, maxLength: 1000 }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        expedition: { type: string }
+        user: { $ref: '#/components/schemas/User' }
+        createdAt: { type: string, format: date-time }
+    ReviewInput:
+      type: object
+      required: [review, rating]
+      properties:
+        review: { type: string, maxLength: 1000 }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+    Booking:
+      type: object
+      properties:
+        _id: { type: string }
+        expedition:
+          { type: object, description: 'name, slug, coverImage, duration, region' }
+        user: { type: object, description: 'name, email' }
+        price: { type: number, description: Amount charged, INR }
+        paid: { type: boolean }
+        razorpayOrderId: { type: string }
+        razorpayPaymentId: { type: string }
+        createdAt: { type: string, format: date-time }
+
+security:
+  - bearerAuth: []
+  - cookieAuth: []
+
+paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Create an account
+      description: New accounts are always travelers; a `role` in the body is ignored.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, passwordConfirm]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                passwordConfirm: { type: string }
+      responses:
+        '201':
+          description: Account created and logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: kavya@example.com }
+                password: { type: string, example: earthly-demo-2026 }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Clear the session cookie
+      security: []
+      responses:
+        '200': { description: Logged out }
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Email a password reset link
+      description: Always answers 200, whether or not the address has an account.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: Accepted }
+        '502': { description: The email provider could not be reached }
+  /auth/reset-password/{token}:
+    patch:
+      tags: [Auth]
+      summary: Set a new password with a reset token
+      description: Tokens are single-use and expire after 10 minutes.
+      security: []
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, passwordConfirm]
+              properties:
+                password: { type: string, minLength: 8 }
+                passwordConfirm: { type: string }
+      responses:
+        '200':
+          description: Password changed and logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: The logged-in user
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  data: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [Users]
+      summary: Update name, email or photo
+      description: The photo is resized to 500x500 and re-encoded as JPEG.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                photo: { type: string, format: binary }
+      responses:
+        '200': { description: Updated user }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Users]
+      summary: Deactivate the account
+      description: Soft delete. The account stops appearing in queries and its sessions stop working.
+      responses:
+        '204': { description: Deactivated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /users/me/password:
+    patch:
+      tags: [Users]
+      summary: Change password
+      description: Sessions issued before the change stop working; a fresh one is returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [passwordCurrent, password, passwordConfirm]
+              properties:
+                passwordCurrent: { type: string }
+                password: { type: string, minLength: 8 }
+                passwordConfirm: { type: string }
+      responses:
+        '200':
+          description: Password changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /users:
+    get:
+      tags: [Users]
+      summary: List users (admin)
+      parameters:
+        - { $ref: '#/components/parameters/Sort' }
+        - { $ref: '#/components/parameters/Fields' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200': { description: Users }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /users/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Users]
+      summary: Get a user (admin)
+      responses:
+        '200': { description: User }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Users]
+      summary: Update name, email or role (admin)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                role: { type: string, enum: [traveler, guide, lead, admin] }
+      responses:
+        '200': { description: Updated user }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Users]
+      summary: Delete a user permanently (admin)
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /expeditions:
+    get:
+      tags: [Expeditions]
+      summary: List expeditions
+      description: |
+        Any other query parameter is treated as a filter on that field.
+        Ranges use bracket operators: `price[lte]=40000`, `duration[gte]=5`
+        (`gt`, `gte`, `lt`, `lte`, `ne`).
+      security: []
+      parameters:
+        - name: difficulty
+          in: query
+          schema: { type: string, enum: [easy, moderate, challenging] }
+        - name: region
+          in: query
+          schema: { type: string }
+        - name: 'price[lte]'
+          in: query
+          schema: { type: number }
+        - { $ref: '#/components/parameters/Sort' }
+        - { $ref: '#/components/parameters/Fields' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          description: A page of expeditions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  results: { type: integer, description: Items in this page }
+                  total: { type: integer, description: Items matching the filter }
+                  page: { type: integer }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Expedition' }
+    post:
+      tags: [Expeditions]
+      summary: Create an expedition (lead, admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExpeditionInput' }
+      responses:
+        '201': { description: Created }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /expeditions/featured:
+    get:
+      tags: [Expeditions]
+      summary: The five best-rated expeditions
+      security: []
+      responses:
+        '200': { description: Up to five expeditions, trimmed to card fields }
+  /expeditions/stats:
+    get:
+      tags: [Expeditions]
+      summary: Price and rating summary per difficulty
+      description: Aggregation pipeline grouped by difficulty.
+      security: []
+      responses:
+        '200': { description: One row per difficulty level }
+  /expeditions/nearby:
+    get:
+      tags: [Expeditions]
+      summary: Expeditions starting within a radius
+      description: Geospatial query on the 2dsphere index over `startLocation`.
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/LatLng' }
+        - name: distance
+          in: query
+          required: true
+          schema: { type: number, example: 300 }
+        - { $ref: '#/components/parameters/Unit' }
+      responses:
+        '200': { description: Matching expeditions }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /expeditions/distances:
+    get:
+      tags: [Expeditions]
+      summary: Distance from a position to every starting point
+      description: '`$geoNear` aggregation, nearest first.'
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/LatLng' }
+        - { $ref: '#/components/parameters/Unit' }
+      responses:
+        '200': { description: Name, slug, region and distance per expedition }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /expeditions/schedule/{year}:
+    get:
+      tags: [Expeditions]
+      summary: Departures per month (guide, lead, admin)
+      parameters:
+        - {
+            name: year,
+            in: path,
+            required: true,
+            schema: { type: integer, example: 2027 },
+          }
+      responses:
+        '200': { description: Months with their departures, busiest first }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /expeditions/slug/{slug}:
+    get:
+      tags: [Expeditions]
+      summary: Get an expedition by slug, with reviews
+      security: []
+      parameters:
+        - {
+            name: slug,
+            in: path,
+            required: true,
+            schema: { type: string, example: kaziranga-grassland-safari },
+          }
+      responses:
+        '200': { description: Expedition with guides and reviews populated }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /expeditions/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Expeditions]
+      summary: Get an expedition by id, with reviews
+      security: []
+      responses:
+        '200': { description: Expedition }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Expeditions]
+      summary: Update an expedition (lead, admin)
+      description: |
+        Send JSON for field changes, or multipart to replace images.
+        Images are resized to 2000x1333 JPEG.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExpeditionInput' }
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                coverImage: { type: string, format: binary }
+                images:
+                  type: array
+                  maxItems: 3
+                  items: { type: string, format: binary }
+      responses:
+        '200': { description: Updated expedition }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Expeditions]
+      summary: Delete an expedition (lead, admin)
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /expeditions/{expeditionId}/reviews:
+    parameters:
+      - { $ref: '#/components/parameters/ExpeditionId' }
+    get:
+      tags: [Reviews]
+      summary: Reviews of one expedition
+      security: []
+      responses:
+        '200': { description: Reviews }
+    post:
+      tags: [Reviews]
+      summary: Review an expedition (traveler)
+      description: One review per traveler per expedition. The expedition's rating is recalculated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewInput' }
+      responses:
+        '201': { description: Created }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Already reviewed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /reviews:
+    get:
+      tags: [Reviews]
+      summary: List all reviews
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Sort' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200': { description: Reviews }
+  /reviews/me:
+    get:
+      tags: [Reviews]
+      summary: Reviews written by the logged-in user
+      responses:
+        '200': { description: Reviews with the expedition populated }
+  /reviews/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Reviews]
+      summary: Get a review
+      responses:
+        '200': { description: Review }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Reviews]
+      summary: Edit a review (author or admin)
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewInput' }
+      responses:
+        '200': { description: Updated review }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [Reviews]
+      summary: Delete a review (author or admin)
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /bookings/orders:
+    post:
+      tags: [Bookings]
+      summary: Start a payment
+      description: |
+        Creates a Razorpay order. The amount comes from the expedition's price
+        on the server; nothing price-related is read from the request.
+        Pass the returned `keyId` and `order` to Razorpay Checkout.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expeditionId]
+              properties:
+                expeditionId: { type: string }
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      keyId: { type: string }
+                      order:
+                        type: object
+                        properties:
+                          id: { type: string }
+                          amount: { type: integer, description: In paise }
+                          currency: { type: string, example: INR }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { description: Payments are not configured }
+  /bookings/verify:
+    post:
+      tags: [Bookings]
+      summary: Confirm a payment
+      description: |
+        Checks the HMAC-SHA256 signature from Razorpay Checkout, reads the order
+        back from Razorpay and records the booking. Safe to call more than once
+        for the same order.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [razorpay_order_id, razorpay_payment_id, razorpay_signature]
+              properties:
+                razorpay_order_id: { type: string }
+                razorpay_payment_id: { type: string }
+                razorpay_signature: { type: string }
+      responses:
+        '200':
+          description: Booking recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  data: { $ref: '#/components/schemas/Booking' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /bookings/me:
+    get:
+      tags: [Bookings]
+      summary: Bookings of the logged-in user, newest first
+      responses:
+        '200': { description: Bookings }
+  /bookings:
+    get:
+      tags: [Bookings]
+      summary: List all bookings (lead, admin)
+      parameters:
+        - { $ref: '#/components/parameters/Sort' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200': { description: Bookings }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Bookings]
+      summary: Record a booking by hand (lead, admin)
+      description: For payments taken outside the site.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expedition, user, price]
+              properties:
+                expedition: { type: string }
+                user: { type: string }
+                price: { type: number }
+                paid: { type: boolean }
+      responses:
+        '201': { description: Created }
+  /bookings/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Bookings]
+      summary: Get a booking (lead, admin)
+      responses:
+        '200': { description: Booking }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Bookings]
+      summary: Update `paid` or `price` (lead, admin)
+      responses:
+        '200': { description: Updated booking }
+    delete:
+      tags: [Bookings]
+      summary: Delete a booking (lead, admin)
+      responses:
+        '204': { description: Deleted }
+
+  /webhooks/razorpay:
+    post:
+      tags: [Webhooks]
+      summary: Razorpay webhook
+      description: |
+        Called by Razorpay, not by clients. The `X-Razorpay-Signature` header is
+        an HMAC-SHA256 of the raw body. On `payment.captured` the booking is
+        recorded with the same upsert as `/bookings/verify`, so a payment
+        reported through both paths still produces a single booking.
+      security: []
+      responses:
+        '200': { description: Acknowledged }
+        '400': { description: Invalid signature }
+        '503': { description: Webhook secret not configured }

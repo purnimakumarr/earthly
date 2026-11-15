@@ -1,0 +1,210 @@
+[
+  {
+    "name": "Spiti Valley High Passes",
+    "key": "spiti",
+    "region": "Himachal Pradesh",
+    "duration": 9,
+    "maxGroupSize": 10,
+    "difficulty": "challenging",
+    "price": 54000,
+    "summary": "Cross two high passes into a cold desert of monasteries, fossils and night skies",
+    "description": "Spiti sits in the rain shadow of the Himalaya, above 3,500 metres, and for half the year the road in is closed. We go in over Rohtang and Kunzum once the snow is cleared, camp beside Chandratal, and spend four nights in village homestays around Kaza, Kibber and Tabo.\nGroups are kept to ten so that every stay is in a family home rather than a hotel. Homestays here run on solar hot water and dry composting toilets, and we carry out all non-organic waste. A fixed part of the fee goes to the Kibber village council's winter fodder bank, which reduces livestock losses and with them the conflict with snow leopards.\nExpect long days on rough roads and two nights above 4,000 metres. The first two days are deliberately slow to help with acclimatisation.",
+    "startDates": ["2027-06-12T03:30:00.000Z", "2027-07-17T03:30:00.000Z", "2027-09-04T03:30:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [77.1892, 32.2432], "description": "Manali, Himachal Pradesh", "address": "Mall Road, Manali 175131" },
+    "locations": [
+      { "type": "Point", "coordinates": [77.1892, 32.2432], "description": "Manali", "day": 1 },
+      { "type": "Point", "coordinates": [77.6156, 32.4751], "description": "Chandratal lake camp", "day": 3 },
+      { "type": "Point", "coordinates": [78.0722, 32.2276], "description": "Kaza", "day": 5 },
+      { "type": "Point", "coordinates": [78.009, 32.332], "description": "Kibber village", "day": 6 },
+      { "type": "Point", "coordinates": [78.383, 32.093], "description": "Tabo monastery", "day": 8 }
+    ],
+    "guides": ["tenzin@earthly.example", "imran@earthly.example"]
+  },
+  {
+    "name": "Valley of Flowers Monsoon Trek",
+    "key": "valley-of-flowers",
+    "region": "Uttarakhand",
+    "duration": 6,
+    "maxGroupSize": 10,
+    "difficulty": "moderate",
+    "price": 32000,
+    "summary": "Walk into a glacial valley that turns into an alpine meadow for eight weeks a year",
+    "description": "The Valley of Flowers is a national park and a UNESCO site that can only be reached on foot, and only between June and early October. In late July and August more than five hundred species are in bloom, among them blue poppies, cobra lilies and the brahma kamal.\nWe walk in from Govindghat, stay three nights at Ghangaria and make two day visits to the valley with a botanist from the region, plus a steep optional climb to Hemkund lake. Nobody is allowed to camp inside the park, which is one reason it is in the state it is in.\nThis is a monsoon trek. It will rain, the stone path is slippery, and the daily climb is 500 to 1,000 metres. We do not use mules for luggage; porters from Bhyundar village are hired at the cooperative's rate.",
+    "startDates": ["2027-07-24T02:30:00.000Z", "2027-08-07T02:30:00.000Z", "2027-08-21T02:30:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [79.566, 30.555], "description": "Joshimath, Uttarakhand", "address": "Upper Bazaar, Joshimath 246443" },
+    "locations": [
+      { "type": "Point", "coordinates": [79.566, 30.555], "description": "Joshimath", "day": 1 },
+      { "type": "Point", "coordinates": [79.561, 30.619], "description": "Govindghat trailhead", "day": 2 },
+      { "type": "Point", "coordinates": [79.59, 30.701], "description": "Ghangaria", "day": 2 },
+      { "type": "Point", "coordinates": [79.605, 30.728], "description": "Valley of Flowers", "day": 3 },
+      { "type": "Point", "coordinates": [79.616, 30.699], "description": "Hemkund lake", "day": 5 }
+    ],
+    "guides": ["tenzin@earthly.example", "lakshmi@earthly.example"]
+  },
+  {
+    "name": "Kaziranga Grassland Safari",
+    "key": "kaziranga",
+    "region": "Assam",
+    "duration": 5,
+    "maxGroupSize": 8,
+    "difficulty": "easy",
+    "price": 36000,
+    "summary": "Rhinos, wild buffalo and hoolock gibbons on the Brahmaputra floodplain",
+    "description": "Two thirds of the world's one-horned rhinoceroses live in Kaziranga, in elephant grass that is taller than a jeep. Over three days we cover the central, western and eastern ranges, each with a different mix of wetland and woodland, and finish with a dawn walk in Hoollongapar to listen for India's only ape.\nAll drives are in shared petrol jeeps with park-registered drivers, capped at six people each, and we skip elephant-back safaris altogether. Nights are at a family-run lodge on the park boundary that employs former forest guards as naturalists.\nThe park is flat and all wildlife viewing is from vehicles, so this suits most ages. Early starts are not optional: the best hours are before eight.",
+    "startDates": ["2027-01-16T03:00:00.000Z", "2027-02-20T03:00:00.000Z", "2027-11-13T03:00:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [91.7362, 26.1445], "description": "Guwahati, Assam", "address": "Paltan Bazaar, Guwahati 781008" },
+    "locations": [
+      { "type": "Point", "coordinates": [91.7362, 26.1445], "description": "Guwahati", "day": 1 },
+      { "type": "Point", "coordinates": [93.409, 26.587], "description": "Kohora, central range", "day": 2 },
+      { "type": "Point", "coordinates": [93.244, 26.58], "description": "Bagori, western range", "day": 3 },
+      { "type": "Point", "coordinates": [93.58, 26.63], "description": "Agoratoli, eastern range", "day": 4 },
+      { "type": "Point", "coordinates": [94.345, 26.683], "description": "Hoollongapar gibbon sanctuary", "day": 5 }
+    ],
+    "guides": ["ananya@earthly.example", "rohan@earthly.example"]
+  },
+  {
+    "name": "Sundarbans Tidal Forest by Boat",
+    "key": "sundarbans",
+    "region": "West Bengal",
+    "duration": 4,
+    "maxGroupSize": 10,
+    "difficulty": "easy",
+    "price": 24000,
+    "summary": "Three days on a country boat through the largest mangrove forest on earth",
+    "description": "The Sundarbans is a delta of some hundred islands where the land is redrawn by the tide twice a day. There are no roads inside the tiger reserve, so we live on a converted wooden fishing boat and move with the water between watchtowers at Sajnekhali, Sudhanyakhali and Dobanki.\nTigers are here but rarely seen. What you will see is how a mangrove works: breathing roots, mudskippers, fiddler crabs, estuarine crocodiles, and six species of kingfisher. One evening is spent with a women's cooperative on Bali island that replants mangrove along eroding embankments; each booking pays for fifty saplings.\nThe boat has four twin cabins and two shared bathrooms. It is simple, quiet, and has no air conditioning.",
+    "startDates": ["2027-01-09T02:30:00.000Z", "2027-02-13T02:30:00.000Z", "2027-12-04T02:30:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [88.3639, 22.5726], "description": "Kolkata, West Bengal", "address": "Esplanade, Kolkata 700069" },
+    "locations": [
+      { "type": "Point", "coordinates": [88.3639, 22.5726], "description": "Kolkata", "day": 1 },
+      { "type": "Point", "coordinates": [88.783, 22.169], "description": "Godkhali jetty", "day": 1 },
+      { "type": "Point", "coordinates": [88.83, 22.125], "description": "Sajnekhali", "day": 2 },
+      { "type": "Point", "coordinates": [88.801, 22.102], "description": "Sudhanyakhali watchtower", "day": 3 },
+      { "type": "Point", "coordinates": [88.76, 21.99], "description": "Dobanki canopy walk", "day": 3 }
+    ],
+    "guides": ["ananya@earthly.example"]
+  },
+  {
+    "name": "Living Root Bridges of Meghalaya",
+    "key": "meghalaya",
+    "region": "Meghalaya",
+    "duration": 6,
+    "maxGroupSize": 10,
+    "difficulty": "moderate",
+    "price": 34000,
+    "summary": "Hike to bridges grown from fig roots in the wettest hills in the world",
+    "description": "In the southern Khasi hills, villages have for centuries trained the aerial roots of rubber fig trees across rivers. A bridge takes fifteen to thirty years to become usable and then lasts for hundreds. We walk to several, including the double-decker bridge at Nongriat, 3,500 steps below the plateau.\nTwo nights are in Nongriat itself, in a homestay reached only on foot, with a Khasi guide whose family maintains one of the bridges. From there we move east to Mawlynnong and the clear water of the Umngot at Dawki.\nDaily walking is four to six hours with a lot of stairs, and the humidity is high. Village entry fees and bridge maintenance contributions are included and paid directly to each village council.",
+    "startDates": ["2027-03-13T03:00:00.000Z", "2027-10-16T03:00:00.000Z", "2027-11-20T03:00:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [91.8933, 25.5788], "description": "Shillong, Meghalaya", "address": "Police Bazaar, Shillong 793001" },
+    "locations": [
+      { "type": "Point", "coordinates": [91.8933, 25.5788], "description": "Shillong", "day": 1 },
+      { "type": "Point", "coordinates": [91.732, 25.284], "description": "Sohra", "day": 2 },
+      { "type": "Point", "coordinates": [91.672, 25.251], "description": "Nongriat double-decker bridge", "day": 3 },
+      { "type": "Point", "coordinates": [91.915, 25.202], "description": "Mawlynnong", "day": 5 },
+      { "type": "Point", "coordinates": [92.018, 25.186], "description": "Dawki, Umngot river", "day": 6 }
+    ],
+    "guides": ["banri@earthly.example", "rohan@earthly.example"]
+  },
+  {
+    "name": "Rann of Kutch Salt Desert",
+    "key": "kutch",
+    "region": "Gujarat",
+    "duration": 5,
+    "maxGroupSize": 12,
+    "difficulty": "easy",
+    "price": 29000,
+    "summary": "White salt flats, grassland birds and craft villages at the edge of the desert",
+    "description": "For a few months after the monsoon water drains away, the Great Rann is a flat white crust that runs to the horizon. We time departures to the full moon and stay in bhungas, the round mud houses of the Banni grassland, in a resort owned and run by the village of Hodka.\nDays are split between the land and the people who work on it: flamingos and cranes at Chhari Dhand with a local birder, the view from Kalo Dungar, and visits to weavers and block printers who sell directly, without a middleman. The last night is on the coast at Mandvi.\nDistances are covered by road and the walking is light. Winter nights in the desert are cold, close to freezing in January.",
+    "startDates": ["2027-01-21T04:00:00.000Z", "2027-02-19T04:00:00.000Z", "2027-12-11T04:00:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [69.6669, 23.242], "description": "Bhuj, Gujarat", "address": "Station Road, Bhuj 370001" },
+    "locations": [
+      { "type": "Point", "coordinates": [69.6669, 23.242], "description": "Bhuj", "day": 1 },
+      { "type": "Point", "coordinates": [69.69, 23.73], "description": "Hodka, Banni grassland", "day": 2 },
+      { "type": "Point", "coordinates": [69.667, 23.827], "description": "Dhordo, white Rann", "day": 3 },
+      { "type": "Point", "coordinates": [69.81, 23.94], "description": "Kalo Dungar", "day": 4 },
+      { "type": "Point", "coordinates": [69.352, 22.833], "description": "Mandvi coast", "day": 5 }
+    ],
+    "guides": ["imran@earthly.example"]
+  },
+  {
+    "name": "Western Ghats Cloud Forest Walk",
+    "key": "western-ghats",
+    "region": "Kerala",
+    "duration": 7,
+    "maxGroupSize": 10,
+    "difficulty": "moderate",
+    "price": 38000,
+    "summary": "Shola forest, tea country and a tiger reserve patrolled by former poachers",
+    "description": "The Western Ghats are older than the Himalaya and hold more endemic species than almost anywhere in Asia. This walk links three protected areas in the high ranges of Kerala: the rolling grassland of Eravikulam, home of the Nilgiri tahr; the shola forests around Munnar; and Periyar, where bamboo rafts replace jeeps.\nIn Periyar our guides are members of an eco-development committee made up of men who once poached sandalwood and cinnamon bark in the same forest and now protect it. Walking with them is the best part of the week.\nWe walk three to five hours on most days, on forest trails and estate paths, with one long day of seven hours. Leeches are a fact of life in the wet months; socks are provided.",
+    "startDates": ["2027-02-06T03:30:00.000Z", "2027-09-18T03:30:00.000Z", "2027-12-18T03:30:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [76.2673, 9.9312], "description": "Kochi, Kerala", "address": "Fort Kochi, Kochi 682001" },
+    "locations": [
+      { "type": "Point", "coordinates": [76.2673, 9.9312], "description": "Kochi", "day": 1 },
+      { "type": "Point", "coordinates": [77.0595, 10.0889], "description": "Munnar", "day": 2 },
+      { "type": "Point", "coordinates": [77.063, 10.2], "description": "Eravikulam national park", "day": 3 },
+      { "type": "Point", "coordinates": [76.905, 9.686], "description": "Vagamon meadows", "day": 5 },
+      { "type": "Point", "coordinates": [77.166, 9.603], "description": "Periyar tiger reserve", "day": 6 }
+    ],
+    "guides": ["lakshmi@earthly.example"]
+  },
+  {
+    "name": "Andaman Reefs and Mangroves",
+    "key": "andaman",
+    "region": "Andaman and Nicobar Islands",
+    "duration": 7,
+    "maxGroupSize": 8,
+    "difficulty": "easy",
+    "price": 58000,
+    "summary": "Snorkel fringing reefs and paddle mangrove creeks with a marine biologist",
+    "description": "The Andaman islands are closer to Myanmar than to mainland India, and their reefs are among the least disturbed in the country. We spend the week between Swaraj Dweep and Shaheed Dweep, snorkelling from the shore and from a small boat, and kayaking through mangrove creeks at dusk when the water lights up with plankton.\nA marine biologist travels with the group and runs a short reef survey each morning; the counts go to a long-term monitoring project. Reef-safe sunscreen is supplied, nobody stands on or touches coral, and we do not visit any site where fish are fed.\nYou need to be comfortable in open water with a mask and fins. Scuba is not included but can be added on two of the days.",
+    "startDates": ["2027-02-27T03:00:00.000Z", "2027-03-27T03:00:00.000Z", "2027-11-27T03:00:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [92.7265, 11.6234], "description": "Port Blair, South Andaman", "address": "Aberdeen Bazaar, Port Blair 744101" },
+    "locations": [
+      { "type": "Point", "coordinates": [92.7265, 11.6234], "description": "Port Blair", "day": 1 },
+      { "type": "Point", "coordinates": [93.0, 12.0], "description": "Swaraj Dweep", "day": 2 },
+      { "type": "Point", "coordinates": [93.05, 11.83], "description": "Shaheed Dweep", "day": 5 },
+      { "type": "Point", "coordinates": [92.709, 11.505], "description": "Chidiya Tapu", "day": 7 }
+    ],
+    "guides": ["ananya@earthly.example", "lakshmi@earthly.example"]
+  },
+  {
+    "name": "Hemis Snow Leopard Winter Watch",
+    "key": "hemis",
+    "region": "Ladakh",
+    "duration": 10,
+    "maxGroupSize": 6,
+    "difficulty": "challenging",
+    "price": 92000,
+    "summary": "Ten winter days with village trackers in the best snow leopard habitat in India",
+    "description": "In February the blue sheep come down to the valley floors of Hemis national park, and the snow leopards follow. We base ourselves in Rumbak, a village of nine houses at 4,000 metres, and spend each day on the ridges with spotting scopes and trackers who grew up here.\nSightings are never promised. Over the past seasons roughly two groups in three have seen a cat, usually at a distance of several hundred metres. Wolves, ibex, urial and golden eagles are more dependable. All stays are in homestays under a community scheme that insures livestock against predation, so that a leopard is worth more to the village alive.\nTemperatures drop to minus twenty at night. The first three days are spent resting in Leh, and a doctor's clearance is required to join.",
+    "startDates": ["2027-01-30T04:00:00.000Z", "2027-02-13T04:00:00.000Z", "2027-02-27T04:00:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [77.5771, 34.1526], "description": "Leh, Ladakh", "address": "Main Bazaar, Leh 194101" },
+    "locations": [
+      { "type": "Point", "coordinates": [77.5771, 34.1526], "description": "Leh", "day": 1 },
+      { "type": "Point", "coordinates": [77.45, 34.1], "description": "Zingchen", "day": 4 },
+      { "type": "Point", "coordinates": [77.416, 34.059], "description": "Rumbak village", "day": 5 },
+      { "type": "Point", "coordinates": [77.703, 33.912], "description": "Hemis monastery", "day": 9 }
+    ],
+    "guides": ["tenzin@earthly.example"]
+  },
+  {
+    "name": "Satpura Tiger Country on Foot",
+    "key": "satpura",
+    "region": "Madhya Pradesh",
+    "duration": 5,
+    "maxGroupSize": 8,
+    "difficulty": "moderate",
+    "price": 41000,
+    "summary": "One of the few tiger reserves in India that you are allowed to walk through",
+    "description": "Satpura is a quiet park. It limits vehicles to a handful a day and, unusually, allows walking and canoeing inside the core zone. We do both: two mornings on foot with a forest guard, a canoe trip on the Denwa backwaters at sunset, and one night at a mobile camp deep inside the reserve.\nOn foot the big animals keep their distance and the small things come forward, such as pugmarks, sloth bear diggings, giant squirrels and the sandstone overhangs with rock paintings several thousand years old. The trip ends on the Pachmarhi plateau.\nWalks are four to five hours over uneven ground. The mobile camp uses no generators and leaves nothing behind; water for washing is limited to a bucket a day.",
+    "startDates": ["2027-03-06T03:30:00.000Z", "2027-11-06T03:30:00.000Z", "2027-12-11T03:30:00.000Z"],
+    "startLocation": { "type": "Point", "coordinates": [77.4126, 23.2599], "description": "Bhopal, Madhya Pradesh", "address": "MP Nagar, Bhopal 462011" },
+    "locations": [
+      { "type": "Point", "coordinates": [77.4126, 23.2599], "description": "Bhopal", "day": 1 },
+      { "type": "Point", "coordinates": [78.018, 22.565], "description": "Madhai gate", "day": 2 },
+      { "type": "Point", "coordinates": [78.05, 22.58], "description": "Denwa backwaters", "day": 3 },
+      { "type": "Point", "coordinates": [78.23, 22.45], "description": "Churna forest camp", "day": 4 },
+      { "type": "Point", "coordinates": [78.433, 22.467], "description": "Pachmarhi", "day": 5 }
+    ],
+    "guides": ["imran@earthly.example", "rohan@earthly.example"]
+  }
+]
