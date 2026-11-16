@@ -6,6 +6,11 @@ const plainText = require('../utils/plainText');
 
 const ROLES = ['traveler', 'guide', 'lead', 'admin'];
 const RESET_TOKEN_TTL_MS = 10 * 60 * 1000;
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const BCRYPT_COST = 12;
+// Compared against when a login names no account, so that answer takes as
+// long as a wrong password and timing does not reveal which emails exist.
+const DUMMY_HASH = bcrypt.hashSync('no-such-account', BCRYPT_COST);
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -49,6 +54,27 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerifyToken: { type: String, select: false },
+  emailVerifyExpires: { type: Date, select: false },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  // TOTP seed, encrypted at rest. Present but not yet active during setup.
+  twoFactorSecret: { type: String, select: false },
+  // Hashes of the unused one-time recovery codes.
+  twoFactorRecoveryCodes: { type: [String], select: false },
+  // Last 30-second step a code was accepted for, so a code cannot be replayed.
+  twoFactorLastStep: { type: Number, select: false },
+  // Wrong codes at login since the last success, and the lock they lead to.
+  twoFactorFailures: { type: Number, select: false },
+  twoFactorFailuresSince: { type: Date, select: false },
+  twoFactorLockedUntil: { type: Date, select: false },
+  favourites: [{ type: mongoose.Schema.ObjectId, ref: 'Expedition' }],
   active: {
     type: Boolean,
     default: true,
@@ -59,23 +85,34 @@ const userSchema = new mongoose.Schema({
 userSchema.set('toJSON', {
   transform: (doc, ret) => {
     delete ret.password;
-    delete ret.active;
+    // Only ever present (and false) on the admin routes, which select it.
+    if (ret.active !== false) delete ret.active;
     delete ret.passwordResetToken;
     delete ret.passwordResetExpires;
+    delete ret.emailVerifyToken;
+    delete ret.emailVerifyExpires;
+    delete ret.twoFactorSecret;
+    delete ret.twoFactorRecoveryCodes;
+    delete ret.twoFactorLastStep;
+    delete ret.twoFactorFailures;
+    delete ret.twoFactorFailuresSince;
+    delete ret.twoFactorLockedUntil;
     delete ret.__v;
     return ret;
   },
 });
 
-// Deactivated accounts are invisible to every find query.
+// Deactivated accounts are invisible to every find query, unless the query
+// opts in with { includeInactive: true } (the admin routes do).
 userSchema.pre(/^find/, function () {
+  if (this.getOptions().includeInactive) return;
   this.where({ active: { $ne: false } });
 });
 
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
 
-  this.password = await bcrypt.hash(this.password, 12);
+  this.password = await bcrypt.hash(this.password, BCRYPT_COST);
   this.passwordConfirm = undefined;
 
   // Backdate by a second so a token issued in the same request stays valid.
@@ -101,6 +138,31 @@ userSchema.methods.createPasswordResetToken = function () {
   this.passwordResetExpires = Date.now() + RESET_TOKEN_TTL_MS;
 
   return token;
+};
+
+userSchema.methods.createEmailVerifyToken = function () {
+  const token = crypto.randomBytes(32).toString('hex');
+
+  this.emailVerified = false;
+  this.emailVerifyToken = hashToken(token);
+  this.emailVerifyExpires = Date.now() + VERIFY_TOKEN_TTL_MS;
+
+  return token;
+};
+
+// Does the work of a password check without an account. Always false.
+userSchema.statics.rejectPassword = async (candidate) => {
+  await bcrypt.compare(String(candidate), DUMMY_HASH);
+  return false;
+};
+
+// Active admins other than the given account.
+userSchema.statics.otherAdmins = function (userId) {
+  return this.countDocuments({
+    role: 'admin',
+    active: { $ne: false },
+    _id: { $ne: userId },
+  });
 };
 
 userSchema.statics.hashToken = hashToken;

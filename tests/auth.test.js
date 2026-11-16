@@ -153,16 +153,14 @@ describe('protected routes', () => {
 describe('PATCH /users/me/password', () => {
   it('requires the current password', async () => {
     const { auth } = await loginAs();
-    const res = await request(app)
-      .patch('/api/v1/users/me/password')
-      .set(auth)
-      .send({
-        passwordCurrent: 'wrong',
-        password: 'new-password-1',
-        passwordConfirm: 'new-password-1',
-      });
+    const res = await request(app).patch('/api/v1/users/me/password').set(auth).send({
+      passwordCurrent: 'wrong',
+      password: 'new-password-1',
+      passwordConfirm: 'new-password-1',
+    });
 
-    expect(res.status).toBe(401);
+    // 403, not 401: the session itself is fine.
+    expect(res.status).toBe(403);
   });
 
   it('changes the password and lets the user log in with it', async () => {
@@ -206,7 +204,7 @@ describe('PATCH /users/me', () => {
     const res = await request(app)
       .patch('/api/v1/users/me')
       .set(auth)
-      .send({ email: 'not-an-email' });
+      .send({ email: 'not-an-email', passwordCurrent: PASSWORD });
 
     expect(res.status).toBe(400);
   });
