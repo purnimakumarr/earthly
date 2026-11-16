@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import TwoFactorSettings from '../components/TwoFactorSettings';
 import { api } from '../lib/api';
 
 export default function Profile() {
   const { user, setUser } = useAuth();
   const notify = useToast();
   const [saving, setSaving] = useState(null);
+  const [email, setEmail] = useState(user.email);
+  const emailChanged = email.trim().toLowerCase() !== user.email;
 
   const run = async (section, action, successMessage, form) => {
     setSaving(section);
@@ -32,6 +35,7 @@ export default function Profile() {
       async () => {
         const res = await api.patch('/users/me', data);
         setUser(res.data);
+        setEmail(res.data.email);
       },
       'Profile saved.',
     );
@@ -67,10 +71,27 @@ export default function Profile() {
             className="input"
             name="email"
             type="email"
-            defaultValue={user.email}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             required
           />
         </label>
+        {emailChanged && (
+          <label className="block">
+            <span className="label">Current password</span>
+            <input
+              className="input"
+              name="passwordCurrent"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+            <span className="mt-1.5 block text-xs text-ink-soft">
+              Needed to change your email address. You will have to confirm the new
+              address before you can book or review.
+            </span>
+          </label>
+        )}
         <label className="block">
           <span className="label">Profile photo</span>
           <input
@@ -123,6 +144,8 @@ export default function Profile() {
           {saving === 'password' ? 'Saving…' : 'Change password'}
         </button>
       </form>
+
+      <TwoFactorSettings />
     </div>
   );
 }
