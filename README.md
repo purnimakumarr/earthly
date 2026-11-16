@@ -8,10 +8,14 @@ The project is backend-first: a REST API in Node.js, Express and MongoDB, with a
 
 ## What the backend does
 
-- **Authentication.** JWT sessions in an httpOnly, SameSite cookie (or a bearer token for API clients), bcrypt password hashing, and sessions that stop working when the password changes or the account is deactivated.
+- **Authentication.** Short-lived access JWTs (15 minutes) in an httpOnly, SameSite cookie or a bearer header, bcrypt password hashing, and sessions that stop working when the password changes or the account is deactivated.
+- **Refresh tokens.** A single-use refresh token, stored only as a hash, renews the session. Tokens rotate on every use; replaying an old one revokes the whole chain from that login, with a ten-second grace so two tabs refreshing at once are not mistaken for theft. The cookie is scoped to the auth endpoints, and a refresh made by cookie does not echo the tokens in the response body.
+- **Email confirmation.** New accounts can browse, but booking and reviewing need a confirmed address (hashed, 24-hour, single-use link). Changing the address asks for the password again and notifies the old address.
+- **Two-factor authentication.** TOTP with any authenticator app. The seed is encrypted at rest (AES-256-GCM), recovery codes are hashed and single-use, a code is accepted for one login only, five wrong codes lock the second step for 15 minutes, and a password reset does not bypass the second factor.
 - **Password reset.** Single-use tokens that expire after 10 minutes. Only a SHA-256 hash of the token is stored, and the endpoint answers the same way whether or not the email exists.
 - **Role-based access.** Four roles (`traveler`, `guide`, `lead`, `admin`) enforced per route. Travelers can only edit their own reviews.
 - **Payments.** The server creates the Razorpay order, so the client never sets the amount. The payment is confirmed twice, by the browser callback and by a webhook, each with HMAC-SHA256 signature checks in constant time. An upsert on a unique order id makes sure the two paths produce exactly one booking.
+- **Seats.** Each departure has its own seat count. A booking takes a seat with one atomic conditional update, the departure is marked sold out when the group is full, and a traveler can hold only one booking per expedition (unique index). Reviews are limited to people who booked.
 - **Query API.** Filtering, range operators, sorting, field selection and pagination from the query string, shared by every list endpoint through one query builder and a generic CRUD factory.
 - **Geospatial queries.** Expeditions within a radius (`$geoWithin` on a 2dsphere index) and distances from any point (`$geoNear`).
 - **Aggregation.** Price and rating statistics per difficulty, departures per month, and ratings that are recalculated whenever a review is created, edited or deleted.
@@ -79,14 +83,22 @@ Open <http://localhost:5173>.
 
 Every seeded account uses the password `earthly-demo-2026`.
 
-| Role | Email |
-|---|---|
-| Traveler | `kavya@example.com` |
-| Guide | `rohan@earthly.example` |
-| Lead | `tenzin@earthly.example` |
-| Admin | `admin@earthly.example` |
+| Role     | Email                    |
+| -------- | ------------------------ |
+| Traveler | `kavya@example.com`      |
+| Guide    | `rohan@earthly.example`  |
+| Lead     | `tenzin@earthly.example` |
+| Admin    | `admin@earthly.example`  |
 
 For payments, use a [Razorpay test card](https://razorpay.com/docs/payments/payments/test-card-details/).
+
+The admin account also gets a **Manage** area in the site header for editing expeditions, bookings, reviews and users. Seeded accounts have a confirmed email. Accounts you sign up yourself need to follow the confirmation link before they can book or review; without SMTP settings, the link is written to the API log in development instead of being emailed.
+
+### Known limit
+
+Seats are taken when the payment is confirmed, not when checkout opens. If two people pay for the last seat at the same moment, both bookings are recorded and the second is logged for a refund. It is stored as `overbooked`, so cancelling it does not free a seat it never held.
+
+Recording a payment is two writes (the booking, then the seat) and not a transaction, because transactions need a replica set. If the server stops between them, the next webhook retry from Razorpay finishes the seat step.
 
 ## API reference
 
@@ -109,7 +121,7 @@ curl "localhost:3000/api/v1/expeditions/stats"
 npm test
 ```
 
-62 integration tests run the real Express app against an in-memory MongoDB. They cover the authentication and reset flows, role checks, the query API, geospatial and aggregation endpoints, rating recalculation, and the payment path, including forged signatures and the webhook and browser reporting the same payment at once.
+129 integration tests run the real Express app against an in-memory MongoDB. They cover the authentication and reset flows, refresh-token rotation and reuse detection, email confirmation, two-factor login and recovery codes, role checks, the query API, geospatial and aggregation endpoints, rating recalculation, seat counting and sold-out departures, and the payment path, including forged signatures and the webhook and browser reporting the same payment at once.
 
 ## Deploying
 
