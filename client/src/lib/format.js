@@ -14,10 +14,15 @@ export const formatDate = (
 export const formatMonth = (value) =>
   formatDate(value, { month: 'long', year: 'numeric' });
 
+export const byDate = (departures = []) =>
+  [...departures].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+export const isUpcoming = (departure) => new Date(departure.date) > new Date();
+
 // The next departure still ahead of today, or the most recent one if none are.
-export const nextDeparture = (dates = []) => {
-  const sorted = dates.map((d) => new Date(d)).sort((a, b) => a - b);
-  return sorted.find((d) => d > new Date()) || sorted.at(-1);
+export const nextDeparture = (departures = []) => {
+  const sorted = byDate(departures);
+  return sorted.find(isUpcoming) || sorted.at(-1);
 };
 
 export const initials = (name = '') =>

@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Avatar from '../components/Avatar';
+import FavouriteButton from '../components/FavouriteButton';
+import ReviewForm from '../components/ReviewForm';
 import RouteMap from '../components/RouteMap';
 import Spinner from '../components/Spinner';
 import Stars from '../components/Stars';
@@ -8,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { api } from '../lib/api';
 import { bookExpedition } from '../lib/checkout';
-import { formatDate, formatPrice, nextDeparture, ROLE_LABELS } from '../lib/format';
+import { byDate, formatDate, formatPrice, isUpcoming, ROLE_LABELS } from '../lib/format';
 import NotFound from './NotFound';
 
 function Fact({ label, children }) {
@@ -29,18 +31,25 @@ export default function ExpeditionDetail() {
   const [expedition, setExpedition] = useState(null);
   const [error, setError] = useState(null);
   const [booking, setBooking] = useState(false);
+  // undefined = not loaded yet, null = this person has no booking here
+  const [myBooking, setMyBooking] = useState(undefined);
+  const [departureId, setDepartureId] = useState(null);
+
+  const load = useCallback(
+    () => api.get(`/expeditions/slug/${slug}`).then((res) => res.data),
+    [slug],
+  );
 
   useEffect(() => {
     let cancelled = false;
     setExpedition(null);
     setError(null);
 
-    api
-      .get(`/expeditions/slug/${slug}`)
-      .then((res) => {
+    load()
+      .then((data) => {
         if (cancelled) return;
-        setExpedition(res.data);
-        document.title = `${res.data.name} · Earthly`;
+        setExpedition(data);
+        document.title = `${data.name} · Earthly`;
       })
       .catch((err) => !cancelled && setError(err));
 
@@ -48,18 +57,56 @@ export default function ExpeditionDetail() {
       cancelled = true;
       document.title = 'Earthly';
     };
-  }, [slug]);
+  }, [load]);
+
+  // Whether the signed-in person already holds a place on this expedition.
+  const expeditionId = expedition?._id;
+  useEffect(() => {
+    if (!user || !expeditionId) return setMyBooking(user ? undefined : null);
+
+    let cancelled = false;
+    api
+      .get('/bookings/me')
+      .then((res) => {
+        if (cancelled) return;
+        setMyBooking(res.data.find((b) => b.expedition?._id === expeditionId) || null);
+      })
+      .catch(() => !cancelled && setMyBooking(null));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, expeditionId]);
 
   if (error?.status === 404) return <NotFound />;
   if (error) return <p className="py-20 text-center text-ink-soft">{error.message}</p>;
   if (!expedition) return <Spinner />;
 
-  const departure = nextDeparture(expedition.startDates);
+  const seatsLeft = (d) => Math.max(expedition.maxGroupSize - d.participants, 0);
+  const isOpen = (d) => !d.soldOut && seatsLeft(d) > 0;
+  const upcoming = byDate(expedition.departures).filter(isUpcoming);
+  const chosen =
+    upcoming.find((d) => d._id === departureId && isOpen(d)) || upcoming.find(isOpen);
+
+  const canReview =
+    user?.role === 'traveler' &&
+    myBooking?.paid &&
+    !expedition.reviews.some((review) => review.user?._id === user._id);
+
+  const postReview = async (values) => {
+    try {
+      await api.post(`/expeditions/${expedition._id}/reviews`, values);
+      setExpedition(await load());
+      notify('Review posted. Thank you.');
+    } catch (err) {
+      notify(err.message, 'error');
+    }
+  };
 
   const handleBook = async () => {
     setBooking(true);
     try {
-      const result = await bookExpedition(expedition, user);
+      const result = await bookExpedition(expedition, chosen._id, user);
       if (result) {
         notify('Payment received. Your place is booked.');
         navigate('/account/bookings');
@@ -85,9 +132,12 @@ export default function ExpeditionDetail() {
             <p className="text-xs font-semibold tracking-[0.14em] uppercase opacity-90">
               {expedition.region}
             </p>
-            <h1 className="mt-2 max-w-3xl text-3xl leading-tight sm:text-5xl">
-              {expedition.name}
-            </h1>
+            <div className="mt-2 flex items-end justify-between gap-4">
+              <h1 className="max-w-3xl text-3xl leading-tight sm:text-5xl">
+                {expedition.name}
+              </h1>
+              <FavouriteButton expeditionId={expedition._id} className="mb-1 shrink-0" />
+            </div>
           </div>
         </div>
       </div>
@@ -154,6 +204,22 @@ export default function ExpeditionDetail() {
                 ★ {expedition.ratingsAverage} from {expedition.ratingsQuantity} reviews
               </span>
             </h2>
+            {canReview && (
+              <div className="card mt-4 p-5">
+                <p className="font-display text-lg">How was it?</p>
+                <p className="text-sm text-ink-soft">
+                  You have a place on this expedition, so you can leave a review.
+                </p>
+                {user.emailVerified ? (
+                  <ReviewForm submitLabel="Post review" onSubmit={postReview} />
+                ) : (
+                  <p className="mt-3 text-sm text-clay-dark">
+                    Confirm your email address first, using the link we sent you.
+                  </p>
+                )}
+              </div>
+            )}
+
             {expedition.reviews.length === 0 ? (
               <p className="mt-4 text-ink-soft">No reviews yet.</p>
             ) : (
@@ -195,26 +261,91 @@ export default function ExpeditionDetail() {
               <Fact label="Starts in">
                 {expedition.startLocation.description.split(',')[0]}
               </Fact>
-              {departure && <Fact label="Next departure">{formatDate(departure)}</Fact>}
             </dl>
 
-            {user ? (
-              <button
-                type="button"
-                onClick={handleBook}
-                disabled={booking}
-                className="btn btn-accent mt-5 w-full"
-              >
-                {booking ? 'Opening payment…' : 'Book this expedition'}
-              </button>
+            {user && myBooking === undefined ? (
+              <Spinner />
+            ) : myBooking ? (
+              <div className="mt-5 rounded-xl bg-moss/10 p-4 text-sm">
+                <p className="font-medium text-ink">
+                  You are booked
+                  {myBooking.departureDate &&
+                    ` for ${formatDate(myBooking.departureDate)}`}
+                  .
+                </p>
+                <Link
+                  to="/account/bookings"
+                  className="mt-1 inline-block font-medium text-ink underline underline-offset-4"
+                >
+                  View your bookings
+                </Link>
+              </div>
             ) : (
-              <Link
-                to="/login"
-                state={{ from: `/expeditions/${slug}` }}
-                className="btn btn-accent mt-5 w-full"
-              >
-                Log in to book
-              </Link>
+              <>
+                <fieldset className="mt-5">
+                  <legend className="label">Choose a departure</legend>
+                  {upcoming.length === 0 && (
+                    <p className="text-sm text-ink-soft">No departures scheduled yet.</p>
+                  )}
+                  <div className="space-y-2">
+                    {upcoming.map((d) => (
+                      <label
+                        key={d._id}
+                        className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm ${
+                          isOpen(d)
+                            ? 'cursor-pointer border-line has-checked:border-ink has-checked:bg-ink/5'
+                            : 'border-line/60 text-ink-soft/70'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="departure"
+                          className="accent-ink"
+                          disabled={!isOpen(d)}
+                          checked={chosen?._id === d._id}
+                          onChange={() => setDepartureId(d._id)}
+                        />
+                        <span className="flex-1 font-medium">{formatDate(d.date)}</span>
+                        <span className={isOpen(d) ? 'text-ink-soft' : 'text-clay-dark'}>
+                          {isOpen(d)
+                            ? `${seatsLeft(d)} seat${seatsLeft(d) === 1 ? '' : 's'} left`
+                            : 'Sold out'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+
+                {!user ? (
+                  <Link
+                    to="/login"
+                    state={{ from: `/expeditions/${slug}` }}
+                    className="btn btn-accent mt-5 w-full"
+                  >
+                    Log in to book
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleBook}
+                      disabled={booking || !chosen || !user.emailVerified}
+                      className="btn btn-accent mt-5 w-full"
+                    >
+                      {booking
+                        ? 'Opening payment…'
+                        : chosen
+                          ? 'Book this expedition'
+                          : 'Fully booked'}
+                    </button>
+                    {!user.emailVerified && (
+                      <p className="mt-2 text-center text-xs text-clay-dark">
+                        Confirm your email address to book.
+                      </p>
+                    )}
+                  </>
+                )}
+              </>
             )}
           </div>
         </aside>

@@ -7,6 +7,7 @@ const TABS = [
   { to: '/account', label: 'Profile', end: true },
   { to: '/account/bookings', label: 'Bookings' },
   { to: '/account/reviews', label: 'Reviews' },
+  { to: '/account/favourites', label: 'Favourites' },
 ];
 
 export default function Account() {
