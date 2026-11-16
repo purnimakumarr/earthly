@@ -1,4 +1,5 @@
 const Review = require('../models/review.model');
+const Booking = require('../models/booking.model');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const crud = require('./crudFactory');
@@ -14,6 +15,21 @@ exports.setExpeditionAndUser = (req, res, next) => {
   };
   next();
 };
+
+// Only people who paid for a place may review the expedition.
+exports.bookedOnly = asyncHandler(async (req, res, next) => {
+  const booked = await Booking.exists({
+    user: req.user.id,
+    expedition: req.body.expedition,
+    paid: true,
+  });
+
+  if (!booked) {
+    throw new ApiError(403, 'You can only review an expedition you have booked.');
+  }
+
+  next();
+});
 
 // Travelers may only change their own reviews; admins may moderate any.
 exports.ownReviewOnly = asyncHandler(async (req, res, next) => {

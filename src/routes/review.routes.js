@@ -1,6 +1,6 @@
 const express = require('express');
 const reviews = require('../controllers/review.controller');
-const { requireAuth, allowRoles } = require('../middleware/auth');
+const { requireAuth, requireVerified, allowRoles } = require('../middleware/auth');
 
 // mergeParams exposes :expeditionId when mounted under /expeditions/:expeditionId/reviews
 const router = express.Router({ mergeParams: true });
@@ -13,7 +13,9 @@ router.get('/me', reviews.getMyReviews);
 router.post(
   '/',
   allowRoles('traveler'),
+  requireVerified,
   reviews.setExpeditionAndUser,
+  reviews.bookedOnly,
   reviews.createReview,
 );
 

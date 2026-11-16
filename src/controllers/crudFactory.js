@@ -11,14 +11,22 @@ const notFound = (Model) =>
 const pick = (source, fields) =>
   Object.fromEntries(Object.entries(source).filter(([key]) => fields.includes(key)));
 
+// Nested routes such as /expeditions/:expeditionId/reviews or
+// /users/:userId/bookings narrow a collection to one parent.
+const parentScope = (params) => ({
+  ...(params.expeditionId && { expedition: params.expeditionId }),
+  ...(params.userId && { user: params.userId }),
+});
+
 exports.pick = pick;
+exports.parentScope = parentScope;
 
-exports.list = (Model) =>
+// `prepare`, when given, adjusts the base query (options, extra fields).
+exports.list = (Model, { prepare = (query) => query } = {}) =>
   asyncHandler(async (req, res) => {
-    // Supports nested routes such as /expeditions/:expeditionId/reviews
-    const scope = req.params.expeditionId ? { expedition: req.params.expeditionId } : {};
+    const scope = parentScope(req.params);
 
-    const builder = new QueryBuilder(Model.find(scope), req.query)
+    const builder = new QueryBuilder(prepare(Model.find(scope)), req.query)
       .filter()
       .sort()
       .select();
