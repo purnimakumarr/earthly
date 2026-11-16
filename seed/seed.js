@@ -2,7 +2,7 @@
  * Loads demo data.
  *
  *   npm run seed          add the data to an empty database
- *   npm run seed:reset    wipe users, expeditions, reviews and bookings first
+ *   npm run seed:reset    wipe users, sessions, expeditions, reviews and bookings first
  *
  * Records refer to each other by email and by a short key rather than by
  * ObjectId, so the JSON files stay readable and ids are generated on insert.
@@ -13,6 +13,7 @@ const User = require('../src/models/user.model');
 const Expedition = require('../src/models/expedition.model');
 const Review = require('../src/models/review.model');
 const Booking = require('../src/models/booking.model');
+const RefreshToken = require('../src/models/refreshToken.model');
 
 const users = require('./data/users.json');
 const expeditions = require('./data/expeditions.json');
@@ -31,7 +32,9 @@ const run = async () => {
   console.log(`Connected to database "${config.mongo.dbName}"`);
 
   if (reset) {
-    await Promise.all([User, Expedition, Review, Booking].map((M) => M.deleteMany({})));
+    await Promise.all(
+      [User, RefreshToken, Expedition, Review, Booking].map((M) => M.deleteMany({})),
+    );
     console.log('Cleared existing data');
   } else if (await Expedition.estimatedDocumentCount()) {
     console.log(
@@ -43,6 +46,7 @@ const run = async () => {
   const userDocs = await User.create(
     users.map((user) => ({
       ...user,
+      emailVerified: true,
       password: DEMO_PASSWORD,
       passwordConfirm: DEMO_PASSWORD,
     })),
@@ -74,8 +78,32 @@ const run = async () => {
   );
   await Promise.all(expeditionDocs.map((doc) => Review.refreshRatings(doc._id)));
 
+  // Every reviewer holds a paid booking (reviews require one), spread across
+  // the departures so the seat counts look lived-in.
+  const expeditionByKey = new Map(
+    expeditions.map(({ key }, i) => [key, expeditionDocs[i]]),
+  );
+  const bookings = reviews.map((review, i) => {
+    const expedition = expeditionByKey.get(review.expedition);
+    const departure = expedition.departures[i % expedition.departures.length];
+    departure.participants += 1;
+    departure.soldOut = departure.participants >= expedition.maxGroupSize;
+
+    return {
+      expedition: expedition._id,
+      user: userIdByEmail.get(`${review.user}@example.com`),
+      departure: departure._id,
+      departureDate: departure.date,
+      seated: true,
+      price: expedition.price,
+      createdAt: new Date(start + (i * 4 - 20) * 24 * 60 * 60 * 1000),
+    };
+  });
+  await Booking.insertMany(bookings);
+  await Promise.all(expeditionDocs.map((doc) => doc.save()));
+
   console.log(
-    `Seeded ${userDocs.length} users, ${expeditionDocs.length} expeditions, ${reviews.length} reviews`,
+    `Seeded ${userDocs.length} users, ${expeditionDocs.length} expeditions, ${reviews.length} reviews and bookings`,
   );
   console.log(`Every demo account uses the password: ${DEMO_PASSWORD}`);
 };

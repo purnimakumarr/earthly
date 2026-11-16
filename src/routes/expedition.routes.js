@@ -3,11 +3,13 @@ const expeditions = require('../controllers/expedition.controller');
 const { requireAuth, allowRoles } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const reviewRouter = require('./review.routes');
+const bookingRouter = require('./booking.routes');
 
 const router = express.Router();
 const staff = [requireAuth, allowRoles('admin', 'lead')];
 
 router.use('/:expeditionId/reviews', reviewRouter);
+router.use('/:expeditionId/bookings', bookingRouter);
 
 // Named routes come before /:id so they are not read as ids.
 router.get('/featured', expeditions.featuredPreset, expeditions.listExpeditions);
@@ -25,7 +27,7 @@ router.get(
 router
   .route('/')
   .get(expeditions.listExpeditions)
-  .post(staff, expeditions.createExpedition);
+  .post(staff, upload.expeditionImages, expeditions.createExpedition);
 
 router
   .route('/:id')
