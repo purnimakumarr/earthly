@@ -2,6 +2,7 @@ const request = require('supertest');
 const app = require('../../src/app');
 const User = require('../../src/models/user.model');
 const Expedition = require('../../src/models/expedition.model');
+const Booking = require('../../src/models/booking.model');
 
 const PASSWORD = 'correct-horse-battery';
 let counter = 0;
@@ -15,6 +16,7 @@ exports.createUser = async (overrides = {}) => {
     email: `user${counter}@example.com`,
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+    emailVerified: true,
     ...overrides,
   });
 };
@@ -45,7 +47,10 @@ exports.expeditionData = (overrides = {}) => {
     summary: 'A short summary',
     description: 'A longer description',
     coverImage: '/img/expeditions/test-cover.jpg',
-    startDates: ['2027-03-10T04:00:00.000Z', '2027-10-05T04:00:00.000Z'],
+    departures: [
+      { date: '2027-03-10T04:00:00.000Z' },
+      { date: '2027-10-05T04:00:00.000Z' },
+    ],
     // Kaza, Spiti
     startLocation: {
       type: 'Point',
@@ -58,3 +63,19 @@ exports.expeditionData = (overrides = {}) => {
 
 exports.createExpedition = (overrides) =>
   Expedition.create(exports.expeditionData(overrides));
+
+// A paid booking, which is what entitles a traveler to review.
+exports.book = (user, expedition, overrides = {}) =>
+  Booking.create({
+    expedition: expedition.id,
+    user: user.id,
+    price: expedition.price,
+    ...overrides,
+  });
+
+// A logged-in traveler who has booked every expedition passed in.
+exports.bookedTraveler = async (...expeditions) => {
+  const session = await exports.loginAs();
+  await Promise.all(expeditions.map((e) => exports.book(session.user, e)));
+  return session;
+};

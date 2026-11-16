@@ -111,11 +111,19 @@ components:
         email: { type: string, format: email }
         role: { type: string, enum: [traveler, guide, lead, admin] }
         photo: { type: string, description: URL path of the profile picture }
+        emailVerified: { type: boolean }
+        twoFactorEnabled: { type: boolean }
+        favourites: { type: array, items: { type: string }, description: Expedition ids }
     Session:
       type: object
       properties:
         status: { type: string, example: success }
-        token: { type: string, description: JWT, also set as the `session` cookie }
+        token:
+          type: string
+          description: Access JWT (15 minutes by default), also set as the `session` cookie
+        refreshToken:
+          type: string
+          description: Single-use token for POST /auth/refresh, also set as the `refresh` cookie
         data: { $ref: '#/components/schemas/User' }
     Point:
       type: object
@@ -145,7 +153,7 @@ components:
         description: { type: string }
         coverImage: { type: string }
         images: { type: array, items: { type: string } }
-        startDates: { type: array, items: { type: string, format: date-time } }
+        departures: { type: array, items: { $ref: '#/components/schemas/Departure' } }
         unlisted: { type: boolean, description: Hidden from every query when true }
         startLocation: { $ref: '#/components/schemas/Point' }
         locations:
@@ -157,6 +165,20 @@ components:
                 properties:
                   day: { type: integer }
         guides: { type: array, items: { type: string }, description: User ids }
+    Departure:
+      type: object
+      required: [date]
+      properties:
+        _id: { type: string }
+        date: { type: string, format: date-time }
+        participants:
+          {
+            type: integer,
+            readOnly: true,
+            description: Seats taken so far. Set by bookings only; ignored when sent,
+          }
+        soldOut:
+          { type: boolean, description: True once participants reaches maxGroupSize }
     Expedition:
       allOf:
         - $ref: '#/components/schemas/ExpeditionInput'
@@ -190,6 +212,18 @@ components:
         expedition:
           { type: object, description: 'name, slug, coverImage, duration, region' }
         user: { type: object, description: 'name, email' }
+        departure: { type: string, description: Id of the departure booked }
+        departureDate: { type: string, format: date-time }
+        seated:
+          {
+            type: boolean,
+            description: Whether the booking holds one of the departure's counted seats,
+          }
+        overbooked:
+          {
+            type: boolean,
+            description: True when the payment arrived after the departure filled up,
+          }
         price: { type: number, description: Amount charged, INR }
         paid: { type: boolean }
         razorpayOrderId: { type: string }
@@ -248,7 +282,44 @@ paths:
                 password: { type: string, example: earthly-demo-2026 }
       responses:
         '200':
-          description: Logged in
+          description: |
+            Logged in. If the account has two-factor authentication on, no
+            session is started: the body is `{ twoFactorRequired: true, challengeToken }`
+            and the client continues at `POST /auth/2fa/verify`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Session'
+                  - type: object
+                    properties:
+                      status: { type: string }
+                      twoFactorRequired: { type: boolean }
+                      challengeToken: { type: string, description: Valid for 5 minutes }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Exchange a refresh token for a new session
+      description: |
+        Reads the token from the `refresh` cookie or the body. Each token works
+        once and is replaced by a new one. Presenting a token that was already
+        used revokes every session descended from that login, except within
+        ten seconds of its rotation (two tabs refreshing at once).
+
+        When the token came from the cookie, the new tokens are only set as
+        cookies: `token` and `refreshToken` are left out of the response body.
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: New session
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Session' }
@@ -256,10 +327,111 @@ paths:
   /auth/logout:
     post:
       tags: [Auth]
-      summary: Clear the session cookie
+      summary: Revoke the refresh token and clear both cookies
       security: []
       responses:
         '200': { description: Logged out }
+  /auth/verify-email/{token}:
+    post:
+      tags: [Auth]
+      summary: Confirm an email address
+      description: The token arrives by email after signup and is valid for 24 hours, once.
+      security: []
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Confirmed }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Email a new confirmation link
+      responses:
+        '200': { description: Sent }
+        '409': { description: Already confirmed }
+  /auth/2fa/setup:
+    post:
+      tags: [Auth]
+      summary: Start two-factor setup
+      description: Returns a TOTP secret, its otpauth URL and a QR code. Nothing is enforced until `/auth/2fa/enable`.
+      responses:
+        '200':
+          description: Secret created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      secret: { type: string }
+                      otpauthUrl: { type: string }
+                      qr: { type: string, description: PNG as a data URL }
+        '409': { description: Already on }
+  /auth/2fa/enable:
+    post:
+      tags: [Auth]
+      summary: Switch two-factor on
+      description: Confirms a code from the authenticator app and returns eight single-use recovery codes, shown once. Every other session of the account is ended.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, example: '123456' }
+      responses:
+        '200': { description: Enabled, with recovery codes }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /auth/2fa/disable:
+    post:
+      tags: [Auth]
+      summary: Switch two-factor off
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+                code: { type: string }
+                recoveryCode: { type: string }
+      responses:
+        '200': { description: Disabled }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/2fa/verify:
+    post:
+      tags: [Auth]
+      summary: Finish a two-factor login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeToken]
+              properties:
+                challengeToken: { type: string }
+                code: { type: string, description: Six digits from the app }
+                recoveryCode: { type: string, description: Alternative to `code` }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429':
+          {
+            description: Five wrong codes in a row; the second step is locked for 15 minutes,
+          }
   /auth/forgot-password:
     post:
       tags: [Auth]
@@ -322,7 +494,11 @@ paths:
     patch:
       tags: [Users]
       summary: Update name, email or photo
-      description: The photo is resized to 500x500 and re-encoded as JPEG.
+      description: |
+        The photo is resized to 500x500 and re-encoded as JPEG; it can only be
+        set by uploading a file. Changing the email address needs
+        `passwordCurrent`, asks for the new address to be confirmed, and sends
+        a notice to the old one.
       requestBody:
         content:
           multipart/form-data:
@@ -331,11 +507,16 @@ paths:
               properties:
                 name: { type: string }
                 email: { type: string, format: email }
+                passwordCurrent:
+                  { type: string, description: Required when the email changes }
                 photo: { type: string, format: binary }
       responses:
         '200': { description: Updated user }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          { description: The email is changing and `passwordCurrent` is missing or wrong }
+        '429': { description: Ten wrong passwords in 15 minutes on this account }
     delete:
       tags: [Users]
       summary: Deactivate the account
@@ -343,6 +524,35 @@ paths:
       responses:
         '204': { description: Deactivated }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /users/me/favourites:
+    get:
+      tags: [Users]
+      summary: Expeditions the current user has saved
+      responses:
+        '200': { description: Expeditions }
+  /users/me/favourites/{expeditionId}:
+    parameters:
+      - { $ref: '#/components/parameters/ExpeditionId' }
+    put:
+      tags: [Users]
+      summary: Save an expedition
+      responses:
+        '200': { description: The updated list of expedition ids }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Users]
+      summary: Remove a saved expedition
+      responses:
+        '200': { description: The updated list of expedition ids }
+  /users/{userId}/bookings:
+    get:
+      tags: [Bookings]
+      summary: Bookings of one user (lead, admin)
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Bookings }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /users/me/password:
     patch:
       tags: [Users]
@@ -366,10 +576,13 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Session' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The current password is wrong }
+        '429': { description: Ten wrong passwords in 15 minutes on this account }
   /users:
     get:
       tags: [Users]
       summary: List users (admin)
+      description: 'Includes accounts that deactivated themselves, marked `active: false`.'
       parameters:
         - { $ref: '#/components/parameters/Sort' }
         - { $ref: '#/components/parameters/Fields' }
@@ -389,7 +602,8 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
     patch:
       tags: [Users]
-      summary: Update name, email or role (admin)
+      summary: Update name, email, role or status (admin)
+      description: The only admin account cannot be demoted or deactivated.
       requestBody:
         content:
           application/json:
@@ -399,15 +613,25 @@ paths:
                 name: { type: string }
                 email: { type: string }
                 role: { type: string, enum: [traveler, guide, lead, admin] }
+                active:
+                  {
+                    type: boolean,
+                    description: False deactivates the account; true brings it back,
+                  }
       responses:
         '200': { description: Updated user }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: This is the only admin account }
     delete:
       tags: [Users]
       summary: Delete a user permanently (admin)
+      description: |
+        Refused while the user has bookings, and for the only admin account.
+        Their reviews stay, shown without a name.
       responses:
         '204': { description: Deleted }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: The user has bookings, or is the only admin }
 
   /expeditions:
     get:
@@ -546,7 +770,13 @@ paths:
       summary: Update an expedition (lead, admin)
       description: |
         Send JSON for field changes, or multipart to replace images.
-        Images are resized to 2000x1333 JPEG.
+        Images are resized to 2000x1333 JPEG, and replaced ones are deleted.
+
+        Ratings, the slug and seat counts cannot be set here. For departures
+        only `_id` and `date` are read: a new date moves the people booked on
+        it, and a departure left out is removed only while nobody is booked
+        (otherwise 409). A group size below the number already booked on a
+        departure is also refused with 409.
       requestBody:
         content:
           application/json:
@@ -567,9 +797,13 @@ paths:
     delete:
       tags: [Expeditions]
       summary: Delete an expedition (lead, admin)
+      description: |
+        Refused while the expedition has bookings. Its reviews, images and
+        entries in people's favourites are removed with it.
       responses:
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: The expedition has bookings }
 
   /expeditions/{expeditionId}/reviews:
     parameters:
@@ -583,7 +817,10 @@ paths:
     post:
       tags: [Reviews]
       summary: Review an expedition (traveler)
-      description: One review per traveler per expedition. The expedition's rating is recalculated.
+      description: |
+        Only for travelers with a confirmed email who hold a paid booking for
+        the expedition. One review per traveler per expedition. The
+        expedition's rating is recalculated.
       requestBody:
         required: true
         content:
@@ -597,6 +834,33 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
+  /expeditions/{expeditionId}/bookings:
+    parameters:
+      - { $ref: '#/components/parameters/ExpeditionId' }
+    get:
+      tags: [Bookings]
+      summary: Bookings of one expedition (lead, admin)
+      responses:
+        '200': { description: Bookings }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Bookings]
+      summary: Add a booking by hand (lead, admin)
+      description: For places sold outside the site. Takes a seat on the departure. The user must exist (404 otherwise).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { type: string }
+                departure: { type: string }
+                price: { type: number, description: Defaults to the list price }
+      responses:
+        '201': { description: Created }
+        '409': { description: Sold out, or this user already has a booking }
   /reviews:
     get:
       tags: [Reviews]
@@ -648,15 +912,19 @@ paths:
         Creates a Razorpay order. The amount comes from the expedition's price
         on the server; nothing price-related is read from the request.
         Pass the returned `keyId` and `order` to Razorpay Checkout.
+        Requires a confirmed email address. Answers 409 if the departure is
+        sold out or has left, or if the caller already booked this expedition.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [expeditionId]
+              required: [expeditionId, departureId]
               properties:
                 expeditionId: { type: string }
+                departureId:
+                  { type: string, description: One of the expedition's departures }
       responses:
         '201':
           description: Order created
@@ -677,6 +945,7 @@ paths:
                           amount: { type: integer, description: In paise }
                           currency: { type: string, example: INR }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Sold out, already left, or already booked }
         '503': { description: Payments are not configured }
   /bookings/verify:
     post:

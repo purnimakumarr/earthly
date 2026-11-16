@@ -52,8 +52,10 @@ export default function MyBookings() {
                   {booking.expedition.name}
                 </Link>
                 <p className="mt-1 text-sm text-ink-soft">
-                  Booked {formatDate(booking.createdAt)} · {booking.expedition.duration}{' '}
-                  days
+                  {booking.departureDate
+                    ? `Departs ${formatDate(booking.departureDate)}`
+                    : `Booked ${formatDate(booking.createdAt)}`}{' '}
+                  · {booking.expedition.duration} days
                 </p>
               </div>
             </>

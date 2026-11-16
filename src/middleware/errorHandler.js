@@ -19,7 +19,8 @@ const normalise = (err) => {
   if (err.code === 11000) {
     const fields = Object.keys(err.keyValue || {});
     if (fields.includes('expedition') && fields.includes('user')) {
-      return new ApiError(409, 'You have already reviewed this expedition.');
+      const what = /bookings/.test(err.message) ? 'booked' : 'reviewed';
+      return new ApiError(409, `You have already ${what} this expedition.`);
     }
     return new ApiError(409, `That ${fields[0] || 'value'} is already in use.`);
   }

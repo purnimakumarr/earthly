@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -59,17 +59,80 @@ function FormError({ message }) {
 const linkClass = 'font-medium text-ink underline underline-offset-4';
 
 export function Login() {
-  const { user, login } = useAuth();
+  const { user, login, verifyTwoFactor } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const destination = location.state?.from || '/';
 
+  // Set once the password is accepted on an account with two-factor on.
+  const [challengeToken, setChallengeToken] = useState(null);
+  const [useRecovery, setUseRecovery] = useState(false);
+
   const form = useSubmit(async (values) => {
-    await login(values);
+    const challenge = await login(values);
+    if (challenge) return setChallengeToken(challenge);
+    navigate(destination, { replace: true });
+  });
+
+  const codeForm = useSubmit(async ({ code }) => {
+    await verifyTwoFactor({
+      challengeToken,
+      [useRecovery ? 'recoveryCode' : 'code']: code,
+    });
     navigate(destination, { replace: true });
   });
 
   if (user) return <Navigate to={destination} replace />;
+
+  if (challengeToken) {
+    return (
+      <AuthCard
+        title="One more step"
+        intro={
+          useRecovery
+            ? 'Enter one of the recovery codes you saved when you switched two-factor on. Each works once.'
+            : 'Enter the 6-digit code from your authenticator app.'
+        }
+        footer={
+          <span className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            <button
+              type="button"
+              className={linkClass}
+              onClick={() => setUseRecovery((value) => !value)}
+            >
+              {useRecovery ? 'Use the authenticator app' : 'Use a recovery code instead'}
+            </button>
+            {/* The way out when the 5-minute challenge has run out. */}
+            <button
+              type="button"
+              className={linkClass}
+              onClick={() => {
+                setChallengeToken(null);
+                setUseRecovery(false);
+              }}
+            >
+              Start again
+            </button>
+          </span>
+        }
+      >
+        <form onSubmit={codeForm.onSubmit} className="space-y-4">
+          <Field
+            key={useRecovery ? 'recovery' : 'totp'}
+            label={useRecovery ? 'Recovery code' : 'Authentication code'}
+            name="code"
+            autoComplete="one-time-code"
+            inputMode={useRecovery ? 'text' : 'numeric'}
+            autoFocus
+          />
+          <FormError message={codeForm.error} />
+          <button className="btn btn-primary w-full" disabled={codeForm.pending}>
+            {codeForm.pending ? 'Checking…' : 'Continue'}
+          </button>
+        </form>
+      </AuthCard>
+    );
+  }
 
   return (
     <AuthCard
@@ -204,6 +267,11 @@ export function ResetPassword() {
 
   const form = useSubmit(async (values) => {
     const res = await api.patch(`/auth/reset-password/${token}`, values);
+    // Accounts with two-factor on get no session here and log in as usual.
+    if (!res.data) {
+      notify('Password updated. Log in with your new password.');
+      return navigate('/login', { replace: true });
+    }
     setUser(res.data);
     notify('Password updated. You are logged in.');
     navigate('/', { replace: true });
@@ -231,6 +299,59 @@ export function ResetPassword() {
           {form.pending ? 'Saving…' : 'Save password'}
         </button>
       </form>
+    </AuthCard>
+  );
+}
+
+// Landing page for the link in the confirmation email.
+export function VerifyEmail() {
+  const { token } = useParams();
+  const { setUser } = useAuth();
+  const [state, setState] = useState({ status: 'pending' });
+  const started = useRef(false);
+
+  useEffect(() => {
+    // The link works once, so guard against the effect running twice in dev.
+    if (started.current) return;
+    started.current = true;
+
+    api
+      .post(`/auth/verify-email/${token}`)
+      .then((res) => {
+        // Reflect it straight away if this is the signed-in account.
+        setUser((current) =>
+          current && current._id === res.data._id
+            ? { ...current, emailVerified: true }
+            : current,
+        );
+        setState({ status: 'done' });
+      })
+      .catch((err) => setState({ status: 'failed', message: err.message }));
+  }, [token, setUser]);
+
+  if (state.status === 'pending') {
+    return <AuthCard title="Confirming your email…" />;
+  }
+
+  if (state.status === 'failed') {
+    return (
+      <AuthCard title="That link did not work" intro={state.message}>
+        <p className="text-sm text-ink-soft">
+          Log in and use “Send it again” in the banner at the top of the page to get a
+          fresh link.
+        </p>
+      </AuthCard>
+    );
+  }
+
+  return (
+    <AuthCard
+      title="Email confirmed"
+      intro="Thank you. You can now book expeditions and leave reviews."
+    >
+      <Link to="/" className="btn btn-primary w-full">
+        Browse expeditions
+      </Link>
     </AuthCard>
   );
 }

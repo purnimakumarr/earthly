@@ -15,8 +15,18 @@ const schema = z.object({
   MONGODB_DB: z.string().default('earthly'),
 
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  JWT_EXPIRES_IN: z.string().default('30d'),
-  JWT_COOKIE_EXPIRES_DAYS: z.coerce.number().positive().default(30),
+  // Access tokens are short-lived; the refresh token keeps people signed in.
+  ACCESS_TOKEN_TTL: z.string().default('15m'),
+  REFRESH_TOKEN_DAYS: z.coerce.number().positive().default(30),
+  // Encrypts two-factor seeds. Kept apart from JWT_SECRET so that rotating
+  // the signing secret does not lock two-factor users out. Falls back to
+  // JWT_SECRET when unset.
+  SECRET_BOX_KEY: optional(
+    z.string().min(32, 'SECRET_BOX_KEY must be at least 32 characters'),
+  ),
+
+  // Where uploaded images are written. Defaults to ./uploads in the project.
+  UPLOAD_DIR: optional(z.string()),
 
   // Public origin of the site, used in links inside emails.
   // Falls back to the request host when unset.
@@ -54,10 +64,12 @@ module.exports = Object.freeze({
   mongo: { uri: env.MONGODB_URI, dbName: env.MONGODB_DB },
   jwt: {
     secret: env.JWT_SECRET,
-    expiresIn: env.JWT_EXPIRES_IN,
-    cookieDays: env.JWT_COOKIE_EXPIRES_DAYS,
+    accessTtl: env.ACCESS_TOKEN_TTL,
+    refreshDays: env.REFRESH_TOKEN_DAYS,
   },
+  secretBoxKey: env.SECRET_BOX_KEY || env.JWT_SECRET,
   clientUrl: env.CLIENT_URL,
+  uploadDir: path.resolve(env.UPLOAD_DIR || path.join(__dirname, '../../uploads')),
   email: {
     from: env.EMAIL_FROM,
     host: env.SMTP_HOST,

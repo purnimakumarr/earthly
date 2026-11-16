@@ -18,6 +18,9 @@ exports.requireAuth = asyncHandler(async (req, res, next) => {
   // Throws JsonWebTokenError / TokenExpiredError, mapped in the error handler.
   const payload = jwt.verify(token, config.jwt.secret);
 
+  // Single-purpose tokens (the 2FA challenge) are not sessions.
+  if (payload.purpose) throw new ApiError(401, 'Invalid session. Please log in again.');
+
   const user = await User.findById(payload.id);
   if (!user) throw new ApiError(401, 'This account no longer exists.');
 
@@ -28,6 +31,14 @@ exports.requireAuth = asyncHandler(async (req, res, next) => {
   req.user = user;
   next();
 });
+
+// Booking and reviewing need a confirmed email address. Must run after requireAuth.
+exports.requireVerified = (req, res, next) => {
+  if (!req.user.emailVerified) {
+    return next(new ApiError(403, 'Please confirm your email address first.'));
+  }
+  next();
+};
 
 // Must run after requireAuth.
 exports.allowRoles =

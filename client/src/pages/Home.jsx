@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 
 const PAGE_SIZE = 6;
 const CARD_FIELDS =
-  'name,slug,region,duration,maxGroupSize,difficulty,price,summary,coverImage,ratingsAverage,ratingsQuantity,startDates';
+  'name,slug,region,duration,maxGroupSize,difficulty,price,summary,coverImage,ratingsAverage,ratingsQuantity,departures';
 
 const DIFFICULTIES = ['easy', 'moderate', 'challenging'];
 const SORTS = [

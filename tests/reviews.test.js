@@ -2,7 +2,14 @@ const request = require('supertest');
 const app = require('../src/app');
 const db = require('./helpers/db');
 const Expedition = require('../src/models/expedition.model');
-const { loginAs, createExpedition } = require('./helpers/factories');
+const {
+  loginAs,
+  bookedTraveler,
+  book,
+  createUser,
+  PASSWORD,
+  createExpedition,
+} = require('./helpers/factories');
 
 beforeAll(db.connect);
 afterEach(db.clear);
@@ -14,8 +21,8 @@ const postReview = (expedition, auth, body) =>
 describe('reviews', () => {
   it('recalculates the expedition rating on create, update and delete', async () => {
     const expedition = await createExpedition();
-    const a = await loginAs();
-    const b = await loginAs();
+    const a = await bookedTraveler(expedition);
+    const b = await bookedTraveler(expedition);
 
     const first = await postReview(expedition, a.auth, { review: 'Superb', rating: 5 });
     expect(first.status).toBe(201);
@@ -42,7 +49,7 @@ describe('reviews', () => {
 
   it('allows one review per traveler per expedition', async () => {
     const expedition = await createExpedition();
-    const { auth } = await loginAs();
+    const { auth } = await bookedTraveler(expedition);
 
     await postReview(expedition, auth, { review: 'First', rating: 5 }).expect(201);
     const res = await postReview(expedition, auth, { review: 'Second', rating: 1 });
@@ -53,8 +60,8 @@ describe('reviews', () => {
 
   it('always attributes the review to the logged-in user', async () => {
     const expedition = await createExpedition();
-    const author = await loginAs();
-    const other = await loginAs();
+    const author = await bookedTraveler(expedition);
+    const other = await bookedTraveler(expedition);
 
     const res = await postReview(expedition, author.auth, {
       review: 'Mine',
@@ -67,8 +74,8 @@ describe('reviews', () => {
 
   it('stops travelers from changing reviews they did not write', async () => {
     const expedition = await createExpedition();
-    const author = await loginAs();
-    const other = await loginAs();
+    const author = await bookedTraveler(expedition);
+    const other = await bookedTraveler(expedition);
     const admin = await loginAs({ role: 'admin' });
 
     const { body } = await postReview(expedition, author.auth, {
@@ -94,7 +101,7 @@ describe('reviews', () => {
   it('lists reviews per expedition and per author', async () => {
     const one = await createExpedition();
     const two = await createExpedition();
-    const { auth } = await loginAs();
+    const { auth } = await bookedTraveler(one, two);
 
     await postReview(one, auth, { review: 'One', rating: 5 });
     await postReview(two, auth, { review: 'Two', rating: 3 });
@@ -109,10 +116,47 @@ describe('reviews', () => {
 
   it('validates the rating range', async () => {
     const expedition = await createExpedition();
-    const { auth } = await loginAs();
+    const { auth } = await bookedTraveler(expedition);
 
     await postReview(expedition, auth, { review: 'Off the scale', rating: 6 }).expect(
       400,
     );
+  });
+
+  it('only lets travelers review an expedition they have booked', async () => {
+    const expedition = await createExpedition();
+    const elsewhere = await createExpedition();
+    const { auth } = await bookedTraveler(elsewhere);
+
+    const res = await postReview(expedition, auth, { review: 'Never went', rating: 5 });
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/booked/i);
+  });
+
+  it('does not count an unpaid booking', async () => {
+    const expedition = await createExpedition();
+    const { user, auth } = await loginAs();
+    await book(user, expedition, { paid: false });
+
+    await postReview(expedition, auth, { review: 'Not yet', rating: 5 }).expect(403);
+  });
+
+  it('asks for a confirmed email address first', async () => {
+    const expedition = await createExpedition();
+    const user = await createUser({ emailVerified: false });
+    await book(user, expedition);
+    const login = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: user.email, password: PASSWORD });
+
+    const res = await postReview(
+      expedition,
+      { Authorization: `Bearer ${login.body.token}` },
+      { review: 'Lovely', rating: 5 },
+    );
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/confirm your email/i);
   });
 });

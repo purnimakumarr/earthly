@@ -27,9 +27,9 @@ const loadCheckout = () => {
  * 2. Razorpay Checkout collects the payment
  * 3. the API verifies the signature and records the booking
  */
-export async function bookExpedition(expedition, user) {
+export async function bookExpedition(expedition, departureId, user) {
   const [{ data }] = await Promise.all([
-    api.post('/bookings/orders', { expeditionId: expedition._id }),
+    api.post('/bookings/orders', { expeditionId: expedition._id, departureId }),
     loadCheckout(),
   ]);
 

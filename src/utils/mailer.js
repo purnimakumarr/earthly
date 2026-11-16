@@ -20,9 +20,9 @@ const getTransport = () => {
   return transport;
 };
 
-const send = async (user, template, url) => {
+const send = async (user, template, url, details = {}) => {
   const firstName = user.name.split(' ')[0];
-  const { subject, html } = templates[template]({ firstName, url });
+  const { subject, html } = templates[template]({ firstName, url, ...details });
 
   const info = await getTransport().sendMail({
     from: config.email.from,
@@ -39,5 +39,10 @@ const send = async (user, template, url) => {
   return info;
 };
 
-exports.sendWelcome = (user, url) => send(user, 'welcome', url);
+exports.sendVerification = (user, url) => send(user, 'verifyEmail', url);
 exports.sendPasswordReset = (user, url) => send(user, 'passwordReset', url);
+// Goes to the address the account used to have, so its owner hears about it.
+exports.sendEmailChanged = (user, previousEmail) =>
+  send({ name: user.name, email: previousEmail }, 'emailChanged', undefined, {
+    newEmail: user.email,
+  });

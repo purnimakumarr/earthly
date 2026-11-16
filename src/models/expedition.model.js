@@ -98,7 +98,14 @@ const expeditionSchema = new mongoose.Schema(
       default: Date.now,
       select: false,
     },
-    startDates: [Date],
+    // Each departure tracks its own seats; `soldOut` flips when the group is full.
+    departures: [
+      {
+        date: { type: Date, required: [true, 'A departure needs a date'] },
+        participants: { type: Number, default: 0, min: 0 },
+        soldOut: { type: Boolean, default: false },
+      },
+    ],
     // Unlisted expeditions are hidden from all queries and aggregates.
     unlisted: {
       type: Boolean,
