@@ -11,11 +11,11 @@ services:
       timeout: 5s
       retries: 10
 
-  # Loads the demo data once, then exits. Does nothing if data is already there.
-  seed:
+  app:
     build: .
-    command: ['node', 'seed/seed.js']
-    environment: &app-env
+    ports:
+      - '3000:3000'
+    environment:
       # development keeps the session cookie usable over plain http://localhost
       NODE_ENV: development
       MONGODB_URI: mongodb://mongo:27017
@@ -24,20 +24,11 @@ services:
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
       RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
-    depends_on:
-      mongo:
-        condition: service_healthy
-
-  app:
-    build: .
-    ports:
-      - '3000:3000'
-    environment: *app-env
     volumes:
       - uploads:/app/uploads
     depends_on:
-      seed:
-        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
 
 volumes:
   mongo-data:
