@@ -48,7 +48,6 @@ src/
   utils/           QueryBuilder, ApiError, asyncHandler, mailer
   emails/          transactional email templates
 client/            React + Vite + Tailwind single-page app
-seed/              demo data and the seed script
 tests/             Jest + Supertest integration tests
 docs/openapi.yaml  API reference, served at /api/docs
 ```
@@ -63,7 +62,7 @@ In production the API also serves the built client, so the whole thing is one de
 docker compose up --build
 ```
 
-This starts MongoDB, loads the demo data and serves the site at <http://localhost:3000>. Payments need Razorpay test keys; everything else works without any configuration.
+This starts MongoDB and serves the site at <http://localhost:3000>. Payments need Razorpay test keys; everything else works without any configuration.
 
 ### Without Docker
 
@@ -73,26 +72,14 @@ Requires Node 22 and a MongoDB instance (local or Atlas).
 cp .env.example .env        # then fill in MONGODB_URI and JWT_SECRET
 npm install
 npm install --prefix client
-npm run seed                # load demo data
 npm run dev                 # API on :3000, client on :5173
 ```
 
 Open <http://localhost:5173>.
 
-### Demo accounts
-
-Every seeded account uses the password `earthly-demo-2026`.
-
-| Role     | Email                    |
-| -------- | ------------------------ |
-| Traveler | `kavya@example.com`      |
-| Guide    | `rohan@earthly.example`  |
-| Lead     | `tenzin@earthly.example` |
-| Admin    | `admin@earthly.example`  |
-
 For payments, use a [Razorpay test card](https://razorpay.com/docs/payments/payments/test-card-details/).
 
-The admin account also gets a **Manage** area in the site header for editing expeditions, bookings, reviews and users. Seeded accounts have a confirmed email. Accounts you sign up yourself need to follow the confirmation link before they can book or review; without SMTP settings, the link is written to the API log in development instead of being emailed.
+The database starts empty. Sign up, confirm your email, then set that account's `role` to `admin` in MongoDB. Admins get a **Manage** area in the site header for creating and editing expeditions, bookings, reviews and users. New accounts need to follow the confirmation link before they can book or review; without SMTP settings, the link is written to the API log in development instead of being emailed.
 
 ### Known limit
 
@@ -129,8 +116,7 @@ The repository includes a `Dockerfile` and a `render.yaml` blueprint for [Render
 
 1. Create a free Atlas cluster and copy its connection string.
 2. On Render, create a Blueprint from this repository and fill in the environment variables it asks for (see `.env.example`).
-3. Run `npm run seed` once with `MONGODB_URI` pointing at Atlas.
-4. In the Razorpay dashboard, add a webhook for `payment.captured` pointing to `https://<your-host>/api/v1/webhooks/razorpay` and set the same secret as `RAZORPAY_WEBHOOK_SECRET`.
+3. In the Razorpay dashboard, add a webhook for `payment.captured` pointing to `https://<your-host>/api/v1/webhooks/razorpay` and set the same secret as `RAZORPAY_WEBHOOK_SECRET`.
 
 Uploaded photos are stored on the instance's disk and are lost on redeploy on a free plan; object storage is the next step.
 

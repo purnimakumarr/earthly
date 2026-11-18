@@ -33,7 +33,7 @@ const saveJpeg = async (buffer, folder, filename, width, height) => {
 };
 
 // Deletes uploaded files by their public URL. Anything that is not under
-// /uploads (the bundled seed images, a missing value) is left alone.
+// /uploads (the bundled expedition photos, a missing value) is left alone.
 const discard = (urls) =>
   Promise.all(
     urls

@@ -10,8 +10,6 @@
     "dev:web": "npm --prefix client run dev",
     "start": "node src/server.js",
     "build": "npm --prefix client ci && npm --prefix client run build",
-    "seed": "node seed/seed.js",
-    "seed:reset": "node seed/seed.js --reset",
     "test": "jest --runInBand",
     "lint": "eslint .",
     "format": "prettier --write ."

@@ -10,3 +10,6 @@ uploads/*
 !uploads/.gitkeep
 *.log
 .DS_Store
+
+# Private showcase data, never committed
+demo

@@ -19,7 +19,6 @@ module.exports = [
       'prefer-const': 'error',
     },
   },
-  { files: ['seed/**/*.js'], rules: { 'no-console': 'off' } },
   {
     files: ['tests/**/*.js'],
     languageOptions: { globals: { ...globals.node, ...globals.jest } },

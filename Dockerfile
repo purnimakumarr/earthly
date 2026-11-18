@@ -20,7 +20,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
 COPY src ./src
-COPY seed ./seed
 COPY docs ./docs
 COPY --from=client /app/client/dist ./client/dist
 
